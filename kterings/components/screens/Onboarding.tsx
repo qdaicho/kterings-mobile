@@ -3,28 +3,32 @@ import { View, StyleSheet, FlatList, ViewToken } from 'react-native';
 import KButton from '../common/KButton';
 import PaginationDot from 'react-native-animated-pagination-dot';
 import OnboardingItem from './OnboardingItem';
+import { router } from 'expo-router';
 
 const text = [
     {
         id: 1,
-        text: 'Homemade goodness delivered to you',
+        text: 'Homemade goodness\n delivered to you',
         textRed: 'you',
-        textGray: 'Order delicious meals and we will deliver right to your home.',
+        textGray: 'Order delicious meals and we\n will deliver right to your home.',
         image: require('@assets/images/motorcycle.png'),
+        button: 'Next'
     },
     {
         id: 2,
-        text: 'Discover new food items daily',
+        text: 'Discover new food\n items daily',
         textRed: 'daily',
-        textGray: 'The selection can change everyday - surprise!',
+        textGray: 'The selection can change\n everyday - surprise!',
         image: require('@assets/images/food.png'),
+        button: 'Next'
     },
     {
         id: 3,
-        text: 'Ready for the Kterings experience?',
+        text: 'Ready for the\n Kterings experience?',
         textRed: 'Kterings',
-        textGray: "You're just a tap away from experiencing magic!",
+        textGray: "You're just a tap away from\n experiencing magic!",
         image: require('@assets/images/logo.png'),
+        button: 'Get Started'
     },
 ];
 
@@ -50,22 +54,30 @@ const OnboardingComponent: React.FC = () => {
             <FlatList
                 ref={flatListRef}
                 data={text}
-                renderItem={({ item }) => <OnboardingItem item={item} />}
+                renderItem={
+                    ({ item }) =>
+                        <OnboardingItem
+                            item={item}
+                            onPress={() => {
+                                const nextPage = Math.min(curPage + 1, text.length - 1);
+                                setCurPage(nextPage);
+                                scrollToIndex(nextPage);
+                                if (curPage === text.length - 1) {
+                                    router.navigate('/login/');
+                                }
+                            }}
+
+                        />
+                }
                 horizontal
+                showsHorizontalScrollIndicator={false}
                 pagingEnabled
                 keyExtractor={(item) => item.id.toString()}
                 viewabilityConfig={viewConfig}
                 scrollEventThrottle={32}
                 onViewableItemsChanged={handleViewableItemsChanged}
             />
-            <KButton
-                title="Next"
-                onPress={() => {
-                    const nextPage = Math.min(curPage + 1, text.length - 1);
-                    setCurPage(nextPage);
-                    scrollToIndex(nextPage);
-                }}
-            />
+
             <PaginationDot activeDotColor={'black'} curPage={curPage} maxPage={text.length} sizeRatio={1} />
 
         </View>
@@ -75,8 +87,9 @@ const OnboardingComponent: React.FC = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        justifyContent: 'center',
+        // justifyContent: 'space-around',
         alignItems: 'center',
+        marginBottom: 80
         // paddingLeft: 20,
         // paddingRight: 20,
     },

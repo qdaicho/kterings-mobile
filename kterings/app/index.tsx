@@ -3,7 +3,7 @@ import { View, StyleSheet } from 'react-native';
 import * as Font from 'expo-font';
 import OnboardingComponent from '../components/screens/Onboarding';
 
-const App: React.FC = () => {
+export default function App() {
     const [fontsLoaded, setFontsLoaded] = useState(false);
 
     useEffect(() => {
@@ -11,10 +11,11 @@ const App: React.FC = () => {
             await Font.loadAsync({
                 'TT Chocolates Trial Regular': require('../assets/fonts/TT Chocolates Trial Regular.otf'),
                 'TT Chocolates Trial Bold': require('../assets/fonts/TT Chocolates Trial Bold.otf'),
+                'TT Chocolates Trial Medium': require('../assets/fonts/TT Chocolates Trial Medium.otf'),
             });
             setFontsLoaded(true);
         }
-        
+
         loadFonts();
     }, []);
 
@@ -34,5 +35,3 @@ const styles = StyleSheet.create({
         flex: 1,
     },
 });
-
-export default App;
