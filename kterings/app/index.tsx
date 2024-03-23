@@ -33,8 +33,8 @@ export default function App() {
             </SignedOut>
 
             <SignedIn>
-                <View style={{ marginTop: Constants.statusBarHeight, flex: 1}}>
-                 <Text>Hello</Text>
+                <View style={{ marginTop: Constants.statusBarHeight, flex: 1 }}>
+                    <Text>Hello</Text>
                 </View>
             </SignedIn>
 

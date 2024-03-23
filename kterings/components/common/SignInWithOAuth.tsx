@@ -23,7 +23,7 @@ const SignInWithOAuth: React.FC<SignInWithOAuthProps> = ({ title = 'Sign in with
     try {
       const { createdSessionId, signIn, signUp, setActive } =
         await startOAuthFlow();
-  
+
       if (createdSessionId) {
         if (setActive) {
           setActive({ session: createdSessionId });
