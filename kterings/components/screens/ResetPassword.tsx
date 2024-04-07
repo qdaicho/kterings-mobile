@@ -1,19 +1,33 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { View, Text, StyleSheet, TextInput } from 'react-native'
 import KButton from '../common/KButton';
 
 interface ResetPasswordProps {
     onPress: () => void;
+    setPassword: (password: string) => void;
+    password: string;
 }
 
-const ResetPassword: React.FC<ResetPasswordProps> = ({onPress}) => {
+const ResetPassword: React.FC<ResetPasswordProps> = ({ onPress, setPassword, password }) => {
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [passwordsMatch, setPasswordsMatch] = useState(true);
+
+    const handlePasswordChange = (text: string) => {
+        setPassword(text);
+        setPasswordsMatch(text === confirmPassword);
+    };
+
+    const handleConfirmPasswordChange = (text: React.SetStateAction<string>) => {
+        setConfirmPassword(text);
+        setPasswordsMatch(text === password);
+    };
     return (
         <View style={{ flex: 1 }}>
             <View style={styles.container}>
                 <Text style={styles.title}>Reset Password</Text>
                 <Text style={styles.subtitle}>Please enter a new password.</Text>
                 <Text style={styles.newPasswordLabel}>New Password</Text>
-                <View style={styles.inputContainer}>
+                <View style={[styles.inputContainer, !passwordsMatch && styles.errorContainer]}>
                     <TextInput
                         placeholder='New Password'
                         placeholderTextColor='#B2B2B2' // Set placeholder text color
@@ -21,10 +35,11 @@ const ResetPassword: React.FC<ResetPasswordProps> = ({onPress}) => {
                         autoCorrect={false}
                         textContentType='password'
                         style={styles.input}
+                        onChangeText={(password) => handlePasswordChange(password)}
                     />
                 </View>
                 <Text style={styles.newPasswordLabel}>Confirm New Password</Text>
-                <View style={styles.inputContainer}>
+                <View style={[styles.inputContainer, !passwordsMatch && styles.errorContainer]}>
                     <TextInput
                         placeholder='New Password'
                         placeholderTextColor='#B2B2B2' // Set placeholder text color
@@ -32,6 +47,7 @@ const ResetPassword: React.FC<ResetPasswordProps> = ({onPress}) => {
                         autoCorrect={false}
                         textContentType='password'
                         style={styles.input}
+                        onChangeText={(password) => handleConfirmPasswordChange(password)}
                     />
                     {/* <EyeIconOrImage style={{
                         position: 'absolute',
@@ -86,6 +102,16 @@ const styles = StyleSheet.create({
         borderRadius: 4,
         backgroundColor: '#EBEBEB',
         justifyContent: 'center'
+    },
+    errorContainer: {
+        height: 47,
+        width: 262,
+        borderRadius: 4,
+        backgroundColor: '#EBEBEB',
+        marginBottom: 30,
+        justifyContent: 'center',
+        borderWidth: 1,
+        borderColor: 'red',
     },
     input: {
         color: '#000000',

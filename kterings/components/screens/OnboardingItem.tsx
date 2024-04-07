@@ -1,6 +1,7 @@
 import React from 'react';
-import { StyleSheet, Text, View, Image, useWindowDimensions } from 'react-native';
+import { Dimensions, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import KButton from '../common/KButton';
+import { SvgProps } from 'react-native-svg';
 
 interface OnboardingItemProps {
     item: {
@@ -8,7 +9,7 @@ interface OnboardingItemProps {
         text: string;
         textRed: string;
         textGray: string;
-        image: number;
+        ImageComponent: React.FC<SvgProps>;
         button: string;
     },
     onPress: () => void
@@ -22,10 +23,11 @@ const OnboardingItem: React.FC<OnboardingItemProps> = ({ item, onPress }) => {
     const textBeforeRed = item.text.substring(0, indexOfTextRed);
     const textAfterRed = item.text.substring(indexOfTextRed + item.textRed.length);
 
-    return (
+    const ImageComponent = item.ImageComponent;
 
+    return (
         <View style={styles.container}>
-            <Image source={item.image} style={[styles.image, { width, resizeMode: 'contain' }]} />
+            <ImageComponent style={[styles.image, { width : width  }]} />
             <View>
                 <Text style={styles.text}>
                     {textBeforeRed}
@@ -47,16 +49,17 @@ const OnboardingItem: React.FC<OnboardingItemProps> = ({ item, onPress }) => {
 
 const styles = StyleSheet.create({
     container: {
-        flex: 1, // Adjusted flex values
+        flex: 1,
         marginTop: 30,
         justifyContent: 'space-evenly',
         alignItems: 'center',
+        width: Dimensions.get('window').width,
     },
     image: {
         marginTop: 80,
+        // marginLeft: 20,
         alignItems: 'center',
     },
-
     text: {
         color: '#3B3B3B',
         fontFamily: 'TT Chocolates Trial Bold',
@@ -65,6 +68,7 @@ const styles = StyleSheet.create({
         letterSpacing: 0,
         lineHeight: 38,
         textAlign: 'center',
+        // marginHorizontal: 20,
     },
     textRed: {
         color: '#BF1E2E',

@@ -4,6 +4,10 @@ import KButton from '../common/KButton';
 import PaginationDot from 'react-native-animated-pagination-dot';
 import OnboardingItem from './OnboardingItem';
 import { router } from 'expo-router';
+import Motorcycle from "@assets/images/motorcycle.svg";
+import Food from "@assets/images/donuts_and_food.svg";
+import Logo from "@assets/images/kterings_logo.svg";
+import { SvgProps } from 'react-native-svg';
 
 const text = [
     {
@@ -11,7 +15,7 @@ const text = [
         text: 'Homemade goodness\n delivered to you',
         textRed: 'you',
         textGray: 'Order delicious meals and we\n will deliver right to your home.',
-        image: require('@assets/images/motorcycle.png'),
+        ImageComponent: Motorcycle, // Import the component directly
         button: 'Next'
     },
     {
@@ -19,7 +23,7 @@ const text = [
         text: 'Discover new food\n items daily',
         textRed: 'daily',
         textGray: 'The selection can change\n everyday - surprise!',
-        image: require('@assets/images/food.png'),
+        ImageComponent: Food, // Import the component directly
         button: 'Next'
     },
     {
@@ -27,7 +31,7 @@ const text = [
         text: 'Ready for the\n Kterings experience?',
         textRed: 'Kterings',
         textGray: "You're just a tap away from\n experiencing magic!",
-        image: require('@assets/images/logo.png'),
+        ImageComponent: Logo, // Import the component directly
         button: 'Get Started'
     },
 ];
@@ -87,11 +91,8 @@ const OnboardingComponent: React.FC = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        // justifyContent: 'space-around',
         alignItems: 'center',
         marginBottom: 80
-        // paddingLeft: 20,
-        // paddingRight: 20,
     },
 });
 

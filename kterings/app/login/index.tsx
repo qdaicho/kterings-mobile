@@ -16,6 +16,7 @@ import PasswordReset from "@/components/screens/PasswordReset";
 import { router } from "expo-router";
 import { SignedOut, useSignIn } from "@clerk/clerk-expo";
 import SignInWithOAuth from "@/components/common/SignInWithOAuth";
+import Logo from "@assets/images/kterings_logo.svg"
 
 export default function Login() {
   const refRBSheet = useRef<RBSheet>(null);
@@ -26,6 +27,14 @@ export default function Login() {
 
   const [emailAddress, setEmailAddress] = React.useState("");
   const [password, setPassword] = React.useState("");
+
+  // forgot password variables
+  // const [emailAddress, setEmailAddress] = useState('');
+  // const [password, setPassword] = useState('');
+  const [code, setCode] = useState('');
+  const [successfulCreation, setSuccessfulCreation] = useState(false);
+  const [secondFactor, setSecondFactor] = useState(false);
+  const [error, setError] = useState('');
 
   const onSignInPress = async () => {
     if (!isLoaded) {
@@ -42,25 +51,76 @@ export default function Login() {
       await setActive({ session: completeSignIn.createdSessionId });
       console.log("Complete sign in:", signIn.status);
       if (signIn.status === "complete") {
-        router.navigate("/");
+        router.navigate("/homepage");
       }
-    } catch (err: any) {
-      console.log(err);
-    }
+    } catch (err: any) { console.error(err.errors); }
   };
+
+  // Send the password reset code to the user's email
+  async function send_password_reset_code() {
+    console.log('emailAddress', emailAddress);
+    // e.preventDefault();
+    await signIn
+      ?.create({
+        strategy: 'reset_password_email_code',
+        identifier: emailAddress,
+      })
+      .then(_ => {
+        setSuccessfulCreation(true);
+        setError('');
+      })
+      .catch(err => {
+        console.error('error', err.errors[0].longMessage);
+        setError(err.errors[0].longMessage);
+      });
+  }
+
+  // Reset the user's password. 
+  // Upon successful reset, the user will be 
+  // signed in and redirected to the home page
+  async function reset_password() {
+    // e.preventDefault();
+    await signIn
+      ?.attemptFirstFactor({
+        strategy: 'reset_password_email_code',
+        code,
+        password,
+      })
+      .then(result => {
+        // Check if 2FA is required
+        if (result.status === 'needs_second_factor') {
+          setSecondFactor(true);
+          setError('');
+        } else if (result.status === 'complete') {
+          // Set the active session to 
+          // the newly created session (user is now signed in)
+          setActive({ session: result.createdSessionId });
+          setError('');
+          router.navigate('/homepage');
+        } else {
+          console.log(result);
+        }
+      })
+      .catch(err => {
+        console.error('error', err.errors[0].longMessage)
+        setError(err.errors[0].longMessage);
+      });
+  }
 
   return (
     <SignedOut>
       <View style={styles.container}>
-        <Image
+        {/* <Image
           source={require("../../assets/images/logo.png")}
           style={styles.kteringsLogo}
-        />
+        /> */}
+        <Logo style={styles.kteringsLogo} width={110} height={110} />
         <View style={styles.inputContainer}>
           <TextInput
             placeholder="Email/Username"
             placeholderTextColor="#B2B2B2" // Set placeholder text color
             style={styles.input}
+            autoCorrect={false}
             onChangeText={(emailAddress) => setEmailAddress(emailAddress)}
           />
         </View>
@@ -76,6 +136,7 @@ export default function Login() {
             onChangeText={(password) => setPassword(password)}
           />
         </View>
+
         <Pressable
           onPress={() => {
             refRBSheet.current && refRBSheet.current.open();
@@ -85,6 +146,7 @@ export default function Login() {
         >
           <Text style={styles.forgotPassword}>Forgot Password?</Text>
         </Pressable>
+
         <KButton
           title="Login"
           onPress={onSignInPress}
@@ -135,15 +197,19 @@ export default function Login() {
               onPress={() => {
                 setDrawerHeight(300);
                 setDrawerIndex(1);
+                send_password_reset_code();
               }}
+              setEmailAddress={setEmailAddress}
             />
           )}
-          {drawerIndex === 1 && (
+          {drawerIndex === 1 && successfulCreation && (
             <EnterCode
               onPress={() => {
                 setDrawerHeight(430);
                 setDrawerIndex(2);
+                // reset_password();
               }}
+              setCode={setCode}
             />
           )}
           {drawerIndex === 2 && (
@@ -151,7 +217,10 @@ export default function Login() {
               onPress={() => {
                 setDrawerHeight(200);
                 setDrawerIndex(3);
+                reset_password();
               }}
+              setPassword={setPassword}
+              password={password}
             />
           )}
           {drawerIndex === 3 && <PasswordReset />}
@@ -202,10 +271,10 @@ const styles = StyleSheet.create({
     marginBottom: 60,
   },
   kteringsLogo: {
-    height: 145.5,
-    width: 166.5,
-    marginBottom: 50,
-    marginTop: 60,
+    // height: 130,
+    // width: 150,
+    marginBottom: 30,
+    marginTop: 90,
   },
   inputContainer: {
     height: 47,

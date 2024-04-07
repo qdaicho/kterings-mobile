@@ -4,9 +4,14 @@ import KButton from '../common/KButton';
 
 interface ForgotPasswordProps {
     onPress: () => void;
+    setEmailAddress: (emailAddress: string) => void;
+    // sendPasswordResetCode: () => void;
 }
 
-const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onPress }) => {
+const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onPress, setEmailAddress }) => {
+    
+    
+    
     return (
         <View style={{ flex: 1 , }}>
             <View style={styles.container}>
@@ -17,6 +22,8 @@ const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onPress }) => {
                         placeholder='Email/Username'
                         placeholderTextColor='#B2B2B2' // Set placeholder text color
                         style={styles.kteringsemailGmail}
+                        autoCorrect={false}
+                        onChangeText={(emailAddress) => setEmailAddress(emailAddress)}
                     />
                 </View>
 

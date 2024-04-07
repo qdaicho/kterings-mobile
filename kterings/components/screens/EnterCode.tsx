@@ -4,9 +4,10 @@ import KButton from '../common/KButton';
 
 interface EnterCodeProps {
     onPress: () => void;
+    setCode: (code: string) => void;
 }
 
-const EnterCode: React.FC<EnterCodeProps> = ({onPress}) => {
+const EnterCode: React.FC<EnterCodeProps> = ({onPress, setCode}) => {
     return (
         <View style={{ flex: 1 }}>
             <View style={styles.container}>
@@ -17,7 +18,9 @@ const EnterCode: React.FC<EnterCodeProps> = ({onPress}) => {
                         placeholder='Code'
                         placeholderTextColor='#B2B2B2' // Set placeholder text color
                         secureTextEntry={true}
+                        autoCorrect={false}
                         style={styles.input}
+                        onChangeText={(code) => setCode(code)}
                     />
                 </View>
 

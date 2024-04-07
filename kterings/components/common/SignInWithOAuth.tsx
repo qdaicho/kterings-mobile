@@ -25,9 +25,10 @@ const SignInWithOAuth: React.FC<SignInWithOAuthProps> = ({ title = 'Sign in with
         await startOAuthFlow();
 
       if (createdSessionId) {
+        // console.log("createdSessionId", createdSessionId);
         if (setActive) {
           setActive({ session: createdSessionId });
-          router.navigate("/");
+          router.navigate("/homepage");
         } else {
           console.error("setActive is not defined");
         }
@@ -35,7 +36,8 @@ const SignInWithOAuth: React.FC<SignInWithOAuthProps> = ({ title = 'Sign in with
         // Use signIn or signUp for next steps such as MFA
       }
     } catch (err) {
-      console.error("OAuth error", err);
+      const error = err as  any;
+      console.error("OAuth error", error.errors[0].message);
     }
   }, []);
 

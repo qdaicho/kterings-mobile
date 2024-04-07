@@ -4,10 +4,12 @@ import * as Font from 'expo-font';
 import OnboardingComponent from '../components/screens/Onboarding';
 import Constants from 'expo-constants';
 import { SignedIn, SignedOut } from '@clerk/clerk-expo';
+import { useRouter } from 'expo-router';
 
 
 export default function App() {
     const [fontsLoaded, setFontsLoaded] = useState(false);
+    const router = useRouter();
 
     useEffect(() => {
         async function loadFonts() {
@@ -20,16 +22,22 @@ export default function App() {
         }
 
         loadFonts();
+
+        
     }, []);
 
     if (!fontsLoaded) {
         return null; // You can show a loading indicator here if necessary
     }
+    // else{
+    //     router.navigate('/homepage'); 
+    // }
 
     return (
         <View style={styles.container}>
             <SignedOut>
                 <OnboardingComponent />
+                  
             </SignedOut>
 
             <SignedIn>

@@ -9,6 +9,7 @@ import Constants from 'expo-constants';
 import VerifyCode from '@/components/screens/VerifyCode';
 import ErrorComponent from '@/components/screens/ErrorComponent';
 import SignInWithOAuth from '@/components/common/SignInWithOAuth';
+import BackButton from '@/components/common/BackButton';
 // import { ClerkInstanceContext } from '@clerk/clerk-react';
 
 
@@ -86,7 +87,7 @@ export default function Login() {
             console.log("Complete sign up:", signUp.status);
 
             if (signUp.status === "complete") {
-                router.navigate("/");
+                router.navigate("/homepage");
             }
         } catch (err: any) {
             // console.error(JSON.stringify(err, null, 2));
@@ -113,8 +114,10 @@ export default function Login() {
 
     return (
         <SignedOut>
+
+
             <View style={styles.container}>
-                {/* <Image source={require('../../assets/images/logo.png')} style={styles.kteringsLogo} /> */}
+                <BackButton onPress={() => { router.back() }} buttonStyle={styles.backButton} />
                 <Text style={styles.createAnAccount}>Create an Account</Text>
                 <Text style={styles.joinToExploreKter}>Join to explore Kterings today!</Text>
                 <View style={styles.inputContainer}>
@@ -245,9 +248,14 @@ const styles = StyleSheet.create({
         // paddingLeft: 20,
         // paddingRight: 20,
     },
+    backButton: {
+        position: 'absolute',
+        top: 40,
+        left: 20
+    },
     createAnAccount: {
         color: '#000000',
-        fontFamily: 'TT Chocolates Trial Medium',
+        fontFamily: 'TT Chocolates Trial Bold',
         fontSize: 20,
         // fontWeight: '600',
         letterSpacing: 0,
