@@ -5,6 +5,7 @@ import OnboardingComponent from '../components/screens/Onboarding';
 import Constants from 'expo-constants';
 import { SignedIn, SignedOut } from '@clerk/clerk-expo';
 import { useRouter } from 'expo-router';
+import { Redirect } from "expo-router";
 
 
 export default function App() {
@@ -41,9 +42,10 @@ export default function App() {
             </SignedOut>
 
             <SignedIn>
-                <View style={{ marginTop: Constants.statusBarHeight, flex: 1 }}>
+                <Redirect href="/homepage/" />
+                {/* <View style={{ marginTop: Constants.statusBarHeight, flex: 1 }}>
                     <Text>Hello</Text>
-                </View>
+                </View> */}
             </SignedIn>
 
         </View>

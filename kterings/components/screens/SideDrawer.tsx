@@ -11,6 +11,7 @@ import { useClerk } from '@clerk/clerk-expo';
 export default function SideDrawer(props: DrawerContentComponentProps) {
     const router = useRouter();
     const { user } = useClerk();
+    
     return (
         <View style={styles.drawerContent}>
             {/* <BackButton onPress={() => { console.log('pressed') }} buttonStyle={styles.backButton} />

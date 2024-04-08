@@ -15,6 +15,9 @@ import { FlatList, ScrollView } from 'react-native-gesture-handler';
 import Product from '@/components/common/Product';
 import { products } from '@/assets/products';
 import ProductLarge from '@/components/common/ProductLarge';
+import { router } from 'expo-router';
+
+import DropDownPicker from 'react-native-dropdown-picker';
 
 const categories = [
     {
@@ -57,12 +60,33 @@ const categories = [
 
 
 
+
+
 export default function App() {
-
-
 
     const Drawer = createDrawerNavigator();
     const navigation = useNavigation();
+
+    const [open, setOpen] = useState(false);
+    const [value, setValue] = useState(null);
+    const [items, setItems] = useState([
+        {
+            label: "Ratings 1.0+",
+            value: 1.0
+        },
+        {
+            label: "Ratings 2.0+",
+            value: 2.0
+        },
+        {
+            label: "Ratings 3.0+",
+            value: 3.0
+        },
+        {
+            label: "Ratings 4.0+",
+            value: 4.0
+        }
+    ]);
 
     return (
         <View style={styles.container}>
@@ -80,8 +104,12 @@ export default function App() {
                                 </View>
                             </View>
                             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                                <MaterialCommunityIcons name="bell-outline" size={24} color="#BF1E2E" style={{ marginRight: 20 }} />
-                                <MaterialCommunityIcons name="shopping-outline" size={24} color="#BF1E2E" />
+                                <Pressable onPress={() => router.navigate('/notifications')}>
+                                    <MaterialCommunityIcons name="bell-outline" size={24} color="#BF1E2E" style={{ marginRight: 20 }} />
+                                </Pressable>
+                                <Pressable onPress={() => router.navigate('/cart')}>
+                                    <MaterialCommunityIcons name="shopping-outline" size={24} color="#BF1E2E" />
+                                </Pressable>
                             </View>
                         </View>
                         <View style={styles.inputContainer}>
@@ -95,20 +123,22 @@ export default function App() {
                                 textContentType="password"
                             /></View>
                     </View>
-                    <View style={{ height: 2, backgroundColor: '#E9E9E9', width: Dimensions.get('window').width, marginBottom: 20 }} />
+                    <View style={{ height: 2, backgroundColor: '#E9E9E9', width: Dimensions.get('window').width }} />
 
                     <FlatList
+
                         data={['categories', 'nearYou', 'allItems']}
                         keyExtractor={(item) => item}
                         renderItem={({ item }) => (
                             <View style={{ marginHorizontal: 30, marginBottom: 20 }}>
                                 {item === 'categories' && (
-                                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10, marginTop: 20 }}>
                                         <Text style={{ fontSize: 15, fontFamily: 'TT Chocolates Trial Bold', color: '#000000' }}>Categories</Text>
                                     </View>
                                 )}
                                 {item === 'categories' && (
                                     <FlatList
+
                                         data={categories}
                                         keyExtractor={(_, index) => index.toString()}
                                         renderItem={({ item }) => (
@@ -123,7 +153,9 @@ export default function App() {
                                 {item === 'nearYou' && (
                                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
                                         <Text style={{ fontSize: 15, fontFamily: 'TT Chocolates Trial Bold', color: '#000000' }}>Near You</Text>
-                                        <Text style={{ fontSize: 12, fontFamily: 'TT Chocolates Trial Medium', color: '#BF1E2E' }}>See All</Text>
+                                        <Pressable onPress={() => router.navigate('/nearyou/')}>
+                                            <Text style={{ fontSize: 12, fontFamily: 'TT Chocolates Trial Medium', color: '#BF1E2E' }}>See All</Text>
+                                        </Pressable>
                                     </View>
                                 )}
                                 {item === 'nearYou' && (
@@ -138,8 +170,53 @@ export default function App() {
                                     />
                                 )}
                                 {item === 'allItems' && (
-                                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                                    <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
                                         <Text style={{ fontSize: 15, fontFamily: 'TT Chocolates Trial Bold', color: '#000000' }}>All Items</Text>
+                                        <DropDownPicker
+                                            open={open}
+                                            value={value}
+                                            items={items}
+                                            setOpen={setOpen}
+                                            setValue={setValue}
+                                            setItems={setItems}
+                                            placeholder='Ratings 4.0+'
+                                            showArrowIcon={false}
+                                            showTickIcon={false}
+                                            dropDownDirection="TOP"
+                                            style={{
+                                                backgroundColor: '#BF1E2E',
+                                                width: 100,
+                                                borderColor: '#EEEEEE',
+                                                borderRadius: 35,
+                                                borderStartEndRadius: 35,
+                                                borderStartStartRadius: 35,
+                                                minHeight: 35,
+                                            }}
+                                            textStyle={{
+                                                fontSize: 12,
+                                                fontFamily: 'TT Chocolates Trial Medium',
+                                                color: '#FFFFFF',
+                                                textAlign: 'center',
+                                            }}
+                                            containerStyle={{ width: 'auto' }}
+                                            dropDownContainerStyle={{
+                                                width: 100,
+                                                borderColor: '#EEEEEE',
+                                                borderRadius: 20,
+                                                marginBottom: 10,
+                                                borderEndEndRadius: 20,
+                                                borderEndStartRadius: 20,
+                                            }}
+                                            listItemLabelStyle={{
+                                                fontSize: 12,
+                                                fontFamily: 'TT Chocolates Trial Medium',
+                                                color: '#000000',
+                                                textAlign: 'center',
+                                            }}
+                                            itemSeparator={true}
+                                            itemSeparatorStyle={{ height: 1, backgroundColor: '#EEEEEE', marginHorizontal: 10 }}
+                                        />
+
                                     </View>
                                 )}
                                 {item === 'allItems' && (

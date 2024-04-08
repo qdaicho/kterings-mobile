@@ -11,17 +11,22 @@ import Star from '@assets/images/star_icon.svg';
 export default function Layout() {
     return (
         <GestureHandlerRootView style={{ flex: 1 }}>
-            <Drawer screenOptions={
-                {
-                    drawerStyle: { width: Dimensions.get('window').width,},
+            <Drawer
+                screenOptions={{
+                    drawerStyle: { width: Dimensions.get('window').width, },
                     // headerStyle: {backgroundColor: '#FF0000'},
                     drawerLabelStyle: { color: 'black', fontSize: 14, fontFamily: 'TT Chocolates Trial Medium' },
-                    drawerActiveTintColor: '#ffffff',
+                    drawerLabel(props) {
+                        return props.focused ? props.color : 'red';
+                    },
+                    drawerActiveTintColor: '#BF1E2E',
+                    drawerActiveBackgroundColor: '#FFFFFF',
+                    drawerInactiveTintColor: '#000000',
+                    drawerInactiveBackgroundColor: '#FFFFFF',
                     headerShown: false,
                     // headerTintColor: 'red',
                     // header
-                }
-            }
+                }}
 
                 drawerContent={SideDrawer}
 
@@ -31,6 +36,7 @@ export default function Layout() {
                     options={{
                         drawerLabel: '',
                         title: '',
+
                     }}
                 />
                 <Drawer.Screen
@@ -38,7 +44,7 @@ export default function Layout() {
                     options={{
                         drawerLabel: 'Orders',
                         title: 'Orders',
-                        drawerIcon: () => <Order />
+                        drawerIcon: ({ focused, color, size }) => <Order color={focused ? '#BF1E2E' : '#000000'} />,
                     }}
                 />
                 <Drawer.Screen

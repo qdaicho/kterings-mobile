@@ -39,6 +39,7 @@
     "react-native-animated-pagination-dot": "^0.4.0",
     "react-native-animated-pagination-dots": "^0.1.73",
     "react-native-dotenv": "^3.4.11",
+    "react-native-dropdown-picker": "^5.4.6",
     "react-native-gesture-handler": "~2.14.0",
     "react-native-pixel-perfect": "^1.0.2",
     "react-native-raw-bottom-sheet": "^2.2.1",
