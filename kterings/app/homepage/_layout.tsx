@@ -7,13 +7,14 @@ import Account from '@assets/images/account_icon.svg';
 import Heart from '@assets/images/heart_icon.svg';
 import Support from '@assets/images/support_icon.svg';
 import Star from '@assets/images/star_icon.svg';
+import { AntDesign } from '@expo/vector-icons';
 
 export default function Layout() {
     return (
         <GestureHandlerRootView style={{ flex: 1 }}>
             <Drawer
                 screenOptions={{
-                    drawerStyle: { width: Dimensions.get('window').width, },
+                    drawerStyle: { width: Dimensions.get('window').width },
                     // headerStyle: {backgroundColor: '#FF0000'},
                     drawerLabelStyle: { color: 'black', fontSize: 14, fontFamily: 'TT Chocolates Trial Medium' },
                     drawerLabel(props) {
@@ -34,9 +35,9 @@ export default function Layout() {
                 <Drawer.Screen
                     name="index" // This is the name of the page and must match the url from root
                     options={{
-                        drawerLabel: '',
-                        title: '',
-
+                        drawerLabel: 'Home',
+                        title: 'Home',
+                        drawerIcon: () => <AntDesign name="home" size={24} color="black" />
                     }}
                 />
                 <Drawer.Screen

@@ -11,7 +11,7 @@ import { useClerk } from '@clerk/clerk-expo';
 export default function SideDrawer(props: DrawerContentComponentProps) {
     const router = useRouter();
     const { user } = useClerk();
-    
+
     return (
         <View style={styles.drawerContent}>
             {/* <BackButton onPress={() => { console.log('pressed') }} buttonStyle={styles.backButton} />
@@ -30,9 +30,9 @@ export default function SideDrawer(props: DrawerContentComponentProps) {
                         rowGap: 0
                     }}
                     icon={() => <BackChevron />}
-                // style={{ marginTop: 20 }}
+                    style={{ marginBottom: 20 }}
                 />
-                <Text style={{ fontSize: 16, fontFamily: 'TT Chocolates Trial Bold', color: '#000000', marginLeft: 20 }}>{user?.fullName}</Text>
+                <Text style={{ fontSize: 16, fontFamily: 'TT Chocolates Trial Bold', color: '#000000', marginLeft: 20, marginBottom: 20 }}>{user?.fullName}</Text>
                 <DrawerItemList {...props} />
             </DrawerContentScrollView>
             <DrawerItem

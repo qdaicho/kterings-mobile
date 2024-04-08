@@ -106,6 +106,7 @@ export default function App() {
                             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                                 <Pressable onPress={() => router.navigate('/notifications')}>
                                     <MaterialCommunityIcons name="bell-outline" size={24} color="#BF1E2E" style={{ marginRight: 20 }} />
+
                                 </Pressable>
                                 <Pressable onPress={() => router.navigate('/cart')}>
                                     <MaterialCommunityIcons name="shopping-outline" size={24} color="#BF1E2E" />
@@ -121,6 +122,7 @@ export default function App() {
                                 secureTextEntry={false}
                                 autoCorrect={false}
                                 textContentType="password"
+                                onFocus={() => router.navigate('/search/')}
                             /></View>
                     </View>
                     <View style={{ height: 2, backgroundColor: '#E9E9E9', width: Dimensions.get('window').width }} />
