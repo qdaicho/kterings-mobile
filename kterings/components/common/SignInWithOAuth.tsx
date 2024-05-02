@@ -42,10 +42,16 @@ const SignInWithOAuth: React.FC<SignInWithOAuthProps> = ({ title = 'Sign in with
   }, []);
 
   return (
-    <Pressable style={[styles.container, buttonStyle]} onPress={onPress}>
-      {/* <GoogleLogo style={styles.logo} /> */}
+    <Pressable
+      style={({ pressed }) => [
+        styles.container,
+        buttonStyle,
+        pressed && styles.pressedStyle, // Apply the pressed style when pressed
+      ]}
+      onPress={onPress}
+    >
       <Image source={require('@assets/images/google_logo.png')} style={styles.logo} />
-      <Text style={styles.text}>{title}</Text>
+      <Text style={[styles.text, textStyle]}>{title}</Text>
     </Pressable>
   );
 };
@@ -54,12 +60,16 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    height: 38,
-    width: 177,
-    // borderRadius: 19,
-    // backgroundColor: '#F8F9FA', // Change to Google's brand color
+    height: 'auto',
+    width: 'auto',
+    padding: 10,
+    borderRadius: 19,
+    backgroundColor: '#FFFFFF',
     paddingHorizontal: 10,
     justifyContent: 'center',
+  },
+  pressedStyle: {
+    backgroundColor: '#EFEFF0', // Change to this color when pressed
   },
   logo: {
     width: 32,
@@ -67,15 +77,13 @@ const styles = StyleSheet.create({
     marginRight: 10,
   },
   text: {
-    // color: '#4285F4', // Google's brand color
     fontFamily: 'TT Chocolates Trial Medium',
     fontSize: 14,
     fontWeight: '500',
     color: '#969696',
     letterSpacing: 0,
-    // lineHeight: 38,
     textAlign: 'center',
-  }
+  },
 });
 
 export default SignInWithOAuth;

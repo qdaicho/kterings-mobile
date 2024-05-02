@@ -1,7 +1,8 @@
 import React from 'react';
-import { View, Text, Image, StyleSheet, ImageSourcePropType } from 'react-native';
+import { View, Text, Image, StyleSheet, ImageSourcePropType, Pressable } from 'react-native';
 import Svg, { Polygon } from 'react-native-svg';
 import { FontAwesome } from '@expo/vector-icons';
+import { router } from 'expo-router';
 
 interface Props {
     image: ImageSourcePropType,
@@ -14,28 +15,41 @@ interface Props {
 const ProductLarge: React.FC<Props> = ({ image, name, category, distance, rating }) => {
     return (
         // <View style={{ overflow: 'hidden', paddingBottom: 5 }}>
-        <View style={styles.card}>
-            <View style={styles.cardHeader}>
-                <Image
-                    source={image}
-                    style={styles.image}
-                />
-            </View>
-            <View style={styles.cardContent}>
-                <View style={styles.infoContainer}>
-                    <View>
-                        <Text style={styles.title}>{name}</Text>
-                        <Text style={styles.subtitle}>{category} • {distance}</Text>
-                    </View>
-                    {/* Assume rating is passed as prop */}
-                    <View style={styles.ratingContainer}>
-                        {/* <StarIcon style={styles.starIcon} /> */}
-                        <FontAwesome name="star" size={16} style={styles.starIcon} />
-                        <Text style={styles.rating}>4.5</Text>
+        <Pressable onPress={() => {
+            router.navigate({
+                pathname: '/productscreen/', params: {
+                    image: image,
+                    name: name,
+                    category: category,
+                    distance: distance,
+                    rating: rating
+
+                }
+            });
+        }}>
+            <View style={styles.card}>
+                <View style={styles.cardHeader}>
+                    <Image
+                        source={image}
+                        style={styles.image}
+                    />
+                </View>
+                <View style={styles.cardContent}>
+                    <View style={styles.infoContainer}>
+                        <View>
+                            <Text style={styles.title}>{name}</Text>
+                            <Text style={styles.subtitle}>{category} • {distance}</Text>
+                        </View>
+                        {/* Assume rating is passed as prop */}
+                        <View style={styles.ratingContainer}>
+                            {/* <StarIcon style={styles.starIcon} /> */}
+                            <FontAwesome name="star" size={16} style={styles.starIcon} />
+                            <Text style={styles.rating}>4.5</Text>
+                        </View>
                     </View>
                 </View>
             </View>
-        </View>
+        </Pressable>
         // </View>
     );
 };
@@ -94,7 +108,7 @@ const styles = StyleSheet.create({
     },
     starIcon: {
         // Add styling for your star icon if needed
-        color: 'gold',
+        color: '#FFBF00',
     },
     rating: {
         fontSize: 12,

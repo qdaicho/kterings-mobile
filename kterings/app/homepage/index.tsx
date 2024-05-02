@@ -58,7 +58,7 @@ export default function App() {
                     <View style={{ alignItems: 'center', marginBottom: 15 }}>
                         <View style={{ flexDirection: 'row', justifyContent: 'space-between', width: '90%', alignItems: 'center', marginBottom: 10 }}>
                             <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
-                                <Pressable onPress={() => navigation.dispatch(DrawerActions.openDrawer())}><Entypo name="menu" size={40} color="#BF1E2E" /></Pressable>
+                                <Entypo name="menu" size={40} color="#BF1E2E" onPress={() => navigation.dispatch(DrawerActions.openDrawer())} />
                                 <View style={{ marginLeft: 20 }}>
                                     <Text style={{ fontSize: 15, fontFamily: 'TT Chocolates Trial Bold', color: '#000000' }}>Delivering to</Text>
                                     <Text style={{ fontSize: 12, fontFamily: 'TT Chocolates Trial Regular', color: '#969696' }}>address</Text>

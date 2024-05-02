@@ -8,10 +8,10 @@ import KButton from '@/components/common/KButton';
 
 // Sample JSON data for Cart
 const sampleCart: any[] = [
-  // { id: 1, title: "Fluffy Pancakes", "notes": "Extra maple syrup", "price": 12.99, "quantity": 2, "image": require("@assets/images/products/pancakes.jpeg") },
-  // { id: 2, title: "Chicken Biryani", "notes": "Extra onion", "price": 5.99, "quantity": 1, "image": require("@assets/images/products/chicken_biryani.jpg") },
-  // { id: 3, title: "Roasted Chicken", "notes": "Extra cheese", "price": 8.99, "quantity": 3, "image": require("@assets/images/products/chicken_biryani.jpg") },
-  // { id: 4, title: "Fried Rice", "notes": "Extra chicken", "price": 7.99, "quantity": 1 },
+  { id: 1, title: "Fluffy Pancakes", "notes": "Extra maple syrup", "price": 12.99, "quantity": 2, "image": require("@assets/images/products/pancakes.jpeg") },
+  { id: 2, title: "Chicken Biryani", "notes": "Extra onion", "price": 5.99, "quantity": 1, "image": require("@assets/images/products/chicken_biryani.jpg") },
+  { id: 3, title: "Roasted Chicken", "notes": "Extra cheese", "price": 8.99, "quantity": 3, "image": require("@assets/images/products/chicken_biryani.jpg") },
+  { id: 4, title: "Fried Rice", "notes": "Extra chicken", "price": 7.99, "quantity": 1 },
 ];
 
 export default function Cart() {

@@ -106,7 +106,7 @@ export default function Search() {
       ) : (
         <View style={{ flex: 1 }}>
 
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 30 }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 30, zIndex: 2, }}>
             <Text style={{ fontSize: 15, fontFamily: 'TT Chocolates Trial Bold', color: '#000000' }}>
               {categories.length} results for "{searchTerm}"
             </Text>
@@ -129,6 +129,7 @@ export default function Search() {
                 borderEndEndRadius: 15,
                 borderEndStartRadius: 15,
                 minHeight: 35,
+
               }}
               textStyle={{
                 fontSize: 12,
