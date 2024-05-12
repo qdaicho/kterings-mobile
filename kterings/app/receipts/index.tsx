@@ -104,13 +104,13 @@ export default function index() {
                     <KButton
                         onPress={() => router.navigate('/')}
                         title="Track your order"
-                        buttonStyle={{ width: 'auto', paddingHorizontal: 10, height: 50 }}
+                        buttonStyle={{ width: 'auto', paddingHorizontal: 20, height: 50 }}
                         textStyle={{fontSize:14}}
                     />
                     <KButton
                         onPress={() => router.navigate('/rateorder/')}
                         title="Rate your order"
-                        buttonStyle={{ width: 'auto', paddingHorizontal: 10, height: 50 }}
+                        buttonStyle={{ width: 'auto', paddingHorizontal: 20, height: 50 }}
                         textStyle={{fontSize:14}}
                     />
                 </View>

@@ -1,7 +1,9 @@
-import React from "react";
+import * as React from 'react'; 
 import { ClerkProvider } from "@clerk/clerk-expo";
 import { Slot } from "expo-router";
 import Constants from 'expo-constants';
+import 'react-native-reanimated';
+import 'react-native-gesture-handler';
 
 export default function RootLayout({
   children,

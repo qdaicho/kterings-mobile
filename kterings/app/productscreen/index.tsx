@@ -10,6 +10,7 @@ import React, { useMemo, useState } from 'react';
 import RadioButton from '@components/common/RadioButton';
 import Minus from '@assets/images/minus.svg';
 import Plus from '@assets/images/plus.svg';
+import KBottomButton from '@/components/common/KBottomButton';
 interface UserFoodReview {
   reviewText: string;
   author: string;
@@ -323,30 +324,7 @@ const ProductScreen = () => {
           </>
         }
         ListFooterComponent={
-          <Pressable
-          onPress={() =>{setCartModalVisible(true)}}
-            onPressIn={() => setIsAddPressed(true)} // When button is pressed
-            onPressOut={() => setIsAddPressed(false)} // When button is released
-          >
-            <View style={[{
-              backgroundColor: '#D00024',
-              height: 80,
-              width: Dimensions.get('window').width,
-              justifyContent: 'center',
-              alignItems: 'center',
-              marginTop: 10
-            }, isAddPressed ? styles.buttonPressed : null,]}>
-              <Text style={[{
-                color: '#FFFFFF',
-                fontFamily: 'TT Chocolates Trial Bold',
-                fontSize: 20,
-                fontWeight: '800',
-                letterSpacing: 0,
-                lineHeight: 38,
-                textAlign: 'center',
-              }, isAddPressed ? styles.textPressed : null]}>Add to Cart</Text>
-            </View>
-          </Pressable>
+          <KBottomButton title="Add to Cart" onPress={() => { setCartModalVisible(true) }} />
 
         }
         data={undefined}
@@ -550,7 +528,8 @@ const styles = StyleSheet.create({
     flex: 0.6,
     // width: '60%',
     height: 'auto',
-    backgroundColor: 'rgba(191,30,46,0.08)',
+    // backgroundColor: 'rgba(191,30,46,0.08)',
+    backgroundColor: '#FFFFFF',
     borderRadius: 10,
     // marginHorizontal: 30,
     // marginBottom: 10,
@@ -598,7 +577,8 @@ const styles = StyleSheet.create({
   },
   modalView: {
     margin: 20,
-    backgroundColor: 'rgba(242,242,242,0.96)',
+    // backgroundColor: 'rgba(242,242,242,0.96)',
+    backgroundColor: '#FFFFFF',
     borderRadius: 20,
     padding: 10,
     alignItems: 'center',
@@ -633,12 +613,6 @@ const styles = StyleSheet.create({
     fontFamily: 'TT Chocolates Trial Medium',
     fontSize: 12,
     marginTop: 20
-  },
-  buttonPressed: {
-    backgroundColor: '#EFEFF0', // Color when pressed
-  },
-  textPressed: {
-    color: '#969696', // Text color when pressed
   },
 });
 

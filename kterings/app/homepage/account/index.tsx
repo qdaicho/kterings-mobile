@@ -1,13 +1,19 @@
-import { View, Text, StyleSheet, Pressable, Image, Modal, Alert } from 'react-native';
-import React, { useState } from 'react';
+import { View, Text, StyleSheet, Pressable, Image, Modal, Alert, ScrollView } from 'react-native';
+import React, { useEffect, useState } from 'react';
 import BackButton from '@/components/common/BackButton';
 import { router } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { AntDesign } from '@expo/vector-icons';
 import { FontAwesome } from '@expo/vector-icons';
+import KAddButton from '@/components/common/KAddButton';
+import * as Location from 'expo-location';
+
 export default function Account() {
   const [pressed, setPressed] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
+
+  
+
   return (
     <View style={{ backgroundColor: '#FFFFFF', flex: 1 }}>
 
@@ -52,8 +58,16 @@ export default function Account() {
       />
       <View style={styles.container}>
         <View style={styles.header}>
-          <Text style={styles.headerText}>Personal Details</Text>
-          <Text style={styles.editText}>Edit Section</Text>
+          <Text style={styles.headerText}>Personal Details </Text>
+          <Pressable
+            onPress={() => {
+              router.push('/editdetails/');
+            }}
+            style={({ pressed }) => [
+              styles.pressableBase,
+              pressed && styles.pressablePressed, // Apply pressed style when pressed
+            ]}
+          ><Text style={styles.editText}>Edit Section</Text></Pressable>
         </View>
         <View style={styles.imageContainer}>
           <Pressable
@@ -72,25 +86,32 @@ export default function Account() {
             <Text style={{ fontSize: 14, fontFamily: 'TT Chocolates Trial Medium', color: '#000000', marginTop: 10 }}>Canada</Text>
           </View>
         </View>
-        <View style={styles.header}><Text style={styles.headerText}>Saved Addresses</Text></View>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 20, alignItems: 'center' }}>
-          <View>
-            <Text style={{ fontSize: 13, fontFamily: 'TT Chocolates Trial Bold', color: '#000000' }}>Home</Text>
-            <Text style={{ fontSize: 12, fontFamily: 'TT Chocolates Trial Medium', color: '#000000' }}>123 Kterings Lane, Kterings Drive, Windsor</Text>
+        <ScrollView>
+          <View style={[styles.header, { marginTop: 20 }]}><Text style={styles.headerText}>Saved Addresses</Text></View>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 20, alignItems: 'center' }}>
+            <View>
+              <Text style={{ fontSize: 13, fontFamily: 'TT Chocolates Trial Bold', color: '#000000' }}>Home</Text>
+              <Text style={{ fontSize: 12, fontFamily: 'TT Chocolates Trial Medium', color: '#000000' }}>123 Kterings Lane, Kterings Drive, Windsor</Text>
+            </View>
+            <Pressable><MaterialCommunityIcons name="pencil" size={24} color="#BF1E2E" /></Pressable>
           </View>
-          <Pressable><MaterialCommunityIcons name="pencil" size={24} color="#BF1E2E" /></Pressable>
-        </View>
 
-        <View style={{ flexDirection: 'row', marginTop: 30, alignItems: 'center' }}>
-          <AntDesign name="pluscircleo" size={24} color="#BF1E2E" />
-          <Text style={{ fontSize: 13, fontFamily: 'TT Chocolates Trial Medium', color: '#000000', marginLeft: 20 }}>Add New Address</Text>
-        </View>
+          <View style={{ marginTop: 20 }}>
+            <KAddButton onPress={() => router.push({
+              pathname: '/addaddress/',
+            })} title='Add New Address' />
+          </View>
 
-        <View style={styles.header}><Text style={styles.headerText}>Payment Details</Text></View>
-        <View style={{ flexDirection: 'row', marginTop: 30, alignItems: 'center' }}>
-          <FontAwesome name="cc-stripe" size={35} color="#5433FF" />
-          <Text style={{ fontSize: 13, fontFamily: 'TT Chocolates Trial Medium', color: '#969696', marginLeft: 20, fontStyle: 'italic' }}>Stripe Connected</Text>
-        </View>
+          <View style={[styles.header, { marginTop: 20 }]}><Text style={styles.headerText}>Payment Details</Text></View>
+          <View style={{ flexDirection: 'row', marginTop: 20, alignItems: 'center' }}>
+            <FontAwesome name="cc-stripe" size={35} color="#5433FF" />
+            <Text style={{ fontSize: 13, fontFamily: 'TT Chocolates Trial Medium', color: '#969696', marginLeft: 20, fontStyle: 'italic' }}>Stripe Connected</Text>
+          </View>
+
+          <View style={{ marginTop: 20 }}>
+            <KAddButton onPress={() => console.log('hello')} title='Add New Card' />
+          </View>
+        </ScrollView>
       </View>
       <Pressable style={{ ...styles.button, marginTop: 20 }} onPress={() => setModalVisible(true)}><Text style={styles.deleteButton}>Delete Account</Text></Pressable>
     </View>
@@ -98,6 +119,14 @@ export default function Account() {
 }
 
 const styles = StyleSheet.create({
+  pressableBase: {
+    padding: 10,
+    borderRadius: 5,
+    alignItems: 'center', // Center align the text within the pressable
+  },
+  pressablePressed: {
+    backgroundColor: '#dddddd', // A light grey background when pressed
+  },
   backButton: {
     position: 'absolute',
     top: 50,

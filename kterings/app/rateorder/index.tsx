@@ -4,6 +4,7 @@ import { Feather, FontAwesome, FontAwesome5 } from '@expo/vector-icons';
 import BackButton from '@/components/common/BackButton';
 import { router } from 'expo-router';
 import { Entypo } from '@expo/vector-icons';
+import KBottomButton from '@/components/common/KBottomButton';
 
 export default function Index() {
     // Sample cart data
@@ -100,7 +101,7 @@ export default function Index() {
                                     placeholder="How was the food and service? Let us know!"
                                     multiline={true}
                                     placeholderTextColor={'#DFDFDF'}
-                                
+
                                 />
                             </TouchableWithoutFeedback>
                         </View>
@@ -142,29 +143,8 @@ export default function Index() {
 
 
             </View>
-            <Pressable
-                onPressIn={() => setIsPostPressed(true)} // When button is pressed
-                onPressOut={() => setIsPostPressed(false)} // When button is released
-            >
-                <View style={[{
-                    backgroundColor: '#D00024',
-                    height: 80,
-                    width: Dimensions.get('window').width,
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    marginTop: 10
-                }, isPostPressed ? styles.buttonPressed : null,]}>
-                    <Text style={[{
-                        color: '#FFFFFF',
-                        fontFamily: 'TT Chocolates Trial Bold',
-                        fontSize: 20,
-                        fontWeight: '800',
-                        letterSpacing: 0,
-                        lineHeight: 38,
-                        textAlign: 'center',
-                    }, isPostPressed ? styles.textPressed : null]}>Post Review</Text>
-                </View>
-            </Pressable>
+            <KBottomButton title="Post Review" onPress={() => { console.log("proceed to payment"); }}  />
+
         </>
     );
 }

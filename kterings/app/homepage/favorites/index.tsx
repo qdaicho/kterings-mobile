@@ -84,6 +84,7 @@ export default function favorites() {
               borderEndEndRadius: 35,
               borderEndStartRadius: 35,
               minHeight: 35,
+              zIndex: 2
             }}
             textStyle={{
               fontSize: 12,
@@ -122,6 +123,7 @@ export default function favorites() {
             marginTop: 50,
             justifyContent: 'space-evenly', // Allow wrap to work properly
             alignSelf: 'center',
+            zIndex: 0,
           }}
         >
           {favoriteKterers.map((kterer, index) => (
@@ -169,6 +171,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginHorizontal: 30,
     marginTop: 110,
+    zIndex: 2
   },
   headerText: {
     fontSize: 15,

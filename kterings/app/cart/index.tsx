@@ -5,6 +5,7 @@ import { router } from 'expo-router';
 import { FlatList } from 'react-native-gesture-handler';
 import CartSvg from '@assets/images/cart.svg';
 import KButton from '@/components/common/KButton';
+import KBottomButton from '@/components/common/KBottomButton';
 
 // Sample JSON data for Cart
 const sampleCart: any[] = [
@@ -94,26 +95,8 @@ export default function Cart() {
             </View>
 
           </View>
-          <Pressable>
-            <View style={{
-              backgroundColor: '#D00024',
-              height: 60,
-              width: Dimensions.get('window').width,
-              justifyContent: 'center',
-              alignItems: 'center',
-              marginTop: 100
-            }}>
-              <Text style={{
-                color: '#FFFFFF',
-                fontFamily: 'TT Chocolates Trial Bold',
-                fontSize: 20,
-                fontWeight: '800',
-                letterSpacing: 0,
-                lineHeight: 38,
-                textAlign: 'center',
-              }}>Proceed to Payment</Text>
-            </View>
-          </Pressable>
+          <KBottomButton title="Proceed to Payment" onPress={() => { console.log("proceed to payment");}}  buttonStyle={{marginTop: 30}}/>
+
         </View>
       ) : (
         <View style={{ flex: 1, alignItems: 'center', marginTop: 60 }}>

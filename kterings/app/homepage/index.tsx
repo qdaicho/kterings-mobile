@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View, StyleSheet, Text, TextInput, Dimensions, Pressable, Image, ListRenderItem, SafeAreaView } from 'react-native';
 import * as Font from 'expo-font';
 import Constants from 'expo-constants';
@@ -19,6 +19,7 @@ import ProductLarge from '@/components/common/ProductLarge';
 import { router } from 'expo-router';
 
 import DropDownPicker from 'react-native-dropdown-picker';
+import RBSheet from 'react-native-raw-bottom-sheet';
 
 
 
@@ -202,6 +203,8 @@ export default function App() {
 
 
                 </View>
+
+                
             </SignedIn>
 
         </View>

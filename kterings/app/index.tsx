@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import * as React from 'react';
 import { View, StyleSheet, Text } from 'react-native';
 import * as Font from 'expo-font';
 import OnboardingComponent from '../components/screens/Onboarding';
@@ -6,7 +6,8 @@ import Constants from 'expo-constants';
 import { SignedIn, SignedOut } from '@clerk/clerk-expo';
 import { useRouter } from 'expo-router';
 import { Redirect } from "expo-router";
-
+import 'react-native-reanimated';
+import { useEffect, useState } from 'react';
 
 export default function App() {
     const [fontsLoaded, setFontsLoaded] = useState(false);
@@ -24,7 +25,7 @@ export default function App() {
 
         loadFonts();
 
-        
+
     }, []);
 
     if (!fontsLoaded) {
@@ -38,7 +39,7 @@ export default function App() {
         <View style={styles.container}>
             <SignedOut>
                 <OnboardingComponent />
-                  
+
             </SignedOut>
 
             <SignedIn>

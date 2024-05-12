@@ -20,26 +20,28 @@ const SignInWithOAuth: React.FC<SignInWithOAuthProps> = ({ title = 'Sign in with
   const { startOAuthFlow } = useOAuth({ strategy: "oauth_google" });
 
   const onPress = React.useCallback(async () => {
+    // router.navigate("/homepage/");
+
     try {
       const { createdSessionId, signIn, signUp, setActive } =
         await startOAuthFlow();
 
       if (createdSessionId) {
-        // console.log("createdSessionId", createdSessionId);
         if (setActive) {
           setActive({ session: createdSessionId });
-          router.navigate("/homepage");
+          router.navigate("/homepage/");
         } else {
-          console.error("setActive is not defined");
+          throw new Error("setActive is not defined");
         }
       } else {
         // Use signIn or signUp for next steps such as MFA
       }
-    } catch (err) {
-      const error = err as  any;
-      console.error("OAuth error", error.errors[0].message);
+    } catch (err: any) {
+      console.error("An error occurred during OAuth flow:", err.errors[0].longMessage);
+      // Handle the error appropriately, e.g., display a user-friendly message
     }
   }, []);
+
 
   return (
     <Pressable
