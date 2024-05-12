@@ -33,7 +33,7 @@ export default function index() {
     return (
         <>
             <BackButton
-                onPress={() => router.back()}
+                onPress={() => router.navigate('/homepage/orders/')}
                 buttonStyle={styles.backButton}
             />
             <View style={{ flex: 1, marginHorizontal: 30, flexDirection: 'column', marginTop: 60 }}>

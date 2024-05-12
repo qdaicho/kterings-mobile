@@ -12,7 +12,7 @@ export default function Account() {
   const [pressed, setPressed] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
 
-  
+
 
   return (
     <View style={{ backgroundColor: '#FFFFFF', flex: 1 }}>
@@ -53,7 +53,7 @@ export default function Account() {
       </Modal>
 
       <BackButton
-        onPress={() => router.back()}
+        onPress={() => router.navigate("/homepage/")}
         buttonStyle={styles.backButton}
       />
       <View style={styles.container}>

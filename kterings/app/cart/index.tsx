@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Dimensions, ImageSourcePropTy
 import BackButton from '@/components/common/BackButton';
 import { router } from 'expo-router';
 import { FlatList } from 'react-native-gesture-handler';
-import CartSvg from '@assets/images/cart.svg';
+import CartSvg from '@/assets/images/cart.svg';
 import KButton from '@/components/common/KButton';
 import KBottomButton from '@/components/common/KBottomButton';
 
@@ -44,7 +44,7 @@ export default function Cart() {
 
   return (
     <View style={styles.container}>
-      <BackButton onPress={() => router.back()} buttonStyle={styles.backButton} />
+      <BackButton onPress={() => router.navigate("/homepage/")} buttonStyle={styles.backButton} />
       <Text style={{ fontSize: 18, fontFamily: 'TT Chocolates Trial Bold', color: '#000000', marginTop: 120, marginBottom: 20, marginHorizontal: 30 }}>Your Cart</Text>
 
       {cart.length > 0 ? (
@@ -73,7 +73,9 @@ export default function Cart() {
             />
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
               <Text style={{ fontSize: 12, fontFamily: 'TT Chocolates Trial Medium', color: '#000000' }}>Subtotal</Text>
-              <Text style={{ fontSize: 12, fontFamily: 'TT Chocolates Trial Medium', color: '#000000' }}>${cart.reduce((total, item) => total + item.price * item.quantity, 0)}</Text>
+              <Text style={{ fontSize: 12, fontFamily: 'TT Chocolates Trial Medium', color: '#000000' }}>
+                ${cart.reduce((total, item) => total + item.price * item.quantity, 0).toFixed(2)}
+              </Text>
             </View>
 
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
@@ -95,7 +97,7 @@ export default function Cart() {
             </View>
 
           </View>
-          <KBottomButton title="Proceed to Payment" onPress={() => { console.log("proceed to payment");}}  buttonStyle={{marginTop: 30}}/>
+          <KBottomButton title="Proceed to Payment" onPress={() => { router.navigate('/payment/') }} buttonStyle={{ marginTop: 30 }} />
 
         </View>
       ) : (

@@ -11,7 +11,7 @@ export default function PersonalDetails() {
     <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
       <View style={styles.mainContainer}>
         <BackButton
-          onPress={() => router.back()} // Ensure router.back() is a valid method
+          onPress={() => router.navigate("/homepage/account")} // Ensure router.back() is a valid method
           buttonStyle={styles.backButton}
         />
         <View style={styles.container}>

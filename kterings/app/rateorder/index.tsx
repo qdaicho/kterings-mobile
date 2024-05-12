@@ -65,7 +65,7 @@ export default function Index() {
 
 
             <BackButton
-                onPress={() => router.back()}
+                onPress={() => router.navigate("/receipts/")}
                 buttonStyle={styles.backButton}
             />
             <View style={{ flex: 1, marginHorizontal: 30, flexDirection: 'column', marginTop: 60 }}>

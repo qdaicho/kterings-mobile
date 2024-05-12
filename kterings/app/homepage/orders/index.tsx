@@ -7,7 +7,7 @@ export default function Orders() { // Changed to PascalCase for React components
   return (
     <>
       <BackButton
-        onPress={() => router.back()}
+        onPress={() => router.navigate('/homepage/')}
         buttonStyle={styles.backButton}
       />
       <View style={{ flex: 1, marginHorizontal: 30, flexDirection: 'column' }}>

@@ -57,7 +57,7 @@ export default function favorites() {
   return (
     <>
       <BackButton
-        onPress={() => router.back()}
+        onPress={() => router.navigate("/homepage")}
         buttonStyle={styles.backButton}
       />
       <View style={styles.container}>
