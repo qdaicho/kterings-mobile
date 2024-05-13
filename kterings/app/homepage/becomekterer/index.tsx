@@ -26,7 +26,7 @@ export default function BecomeKterer() {
   const [modalVisible, setModalVisible] = React.useState(false);
 
   return (
-    <View style={{ flex: 1 }}>
+    <View style={{ flex: 1, backgroundColor: '#ffffff' }}>
 
       <Modal
         animationType="slide"

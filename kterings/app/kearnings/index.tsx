@@ -13,7 +13,7 @@ import DropDownPicker from 'react-native-dropdown-picker';
 
 export default function index() {
     return (
-        <View style={{ flex: 1, backgroundColor: '#BF1E2E' }}>
+        <View style={{ flex: 1, backgroundColor: '#BF1E2E', }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 70, marginHorizontal: 10 }}>
                 {/* <Entypo name="menu" size={40} color="#BF1E2E" onPress={() => navigation.dispatch(DrawerActions.openDrawer())} /> */}
                 <BackButton onPress={() => router.navigate('/homepage/becomekterer/')} textStyle={{ color: '#FFFFFF' }} color={'#FFFFFF'} />

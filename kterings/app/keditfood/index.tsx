@@ -225,6 +225,7 @@ export default function index() {
                         }}
                         dropDownContainerStyle={{
                             borderColor: '#EEEEEE',
+                            zIndex: 2
                         }}
                         listItemLabelStyle={{
                             fontSize: 12,
@@ -264,6 +265,7 @@ export default function index() {
                         }}
                         dropDownContainerStyle={{
                             borderColor: '#EEEEEE',
+                            zIndex: 2
                         }}
                         listItemLabelStyle={{
                             fontSize: 12,
@@ -302,6 +304,7 @@ export default function index() {
                         }}
                         dropDownContainerStyle={{
                             borderColor: '#EEEEEE',
+                            zIndex: 2
                         }}
                         listItemLabelStyle={{
                             fontSize: 12,
@@ -330,7 +333,8 @@ export default function index() {
                             marginTop: 10,
                             height: 'auto',
                             borderColor: '#EEEEEE',
-                            flex: 1
+                            flex: 1,
+                            zIndex: 2
                         }}
                         textStyle={{
                             fontSize: 12,
@@ -340,6 +344,7 @@ export default function index() {
                         }}
                         dropDownContainerStyle={{
                             borderColor: '#EEEEEE',
+                            zIndex: 2
                         }}
                         listItemLabelStyle={{
                             fontSize: 12,
@@ -368,7 +373,8 @@ export default function index() {
                             marginTop: 10,
                             height: 'auto',
                             borderColor: '#EEEEEE',
-                            flex: 1
+                            flex: 1,
+                            zIndex: 2
                         }}
                         textStyle={{
                             fontSize: 12,
@@ -378,6 +384,7 @@ export default function index() {
                         }}
                         dropDownContainerStyle={{
                             borderColor: '#EEEEEE',
+                            zIndex: 2
                         }}
                         listItemLabelStyle={{
                             fontSize: 12,
@@ -410,7 +417,8 @@ export default function index() {
                             marginTop: 10,
                             height: 'auto',
                             borderColor: '#EEEEEE',
-                            flex: 1
+                            flex: 1,
+                            zIndex: 2
                         }}
                         textStyle={{
                             fontSize: 12,
@@ -420,6 +428,7 @@ export default function index() {
                         }}
                         dropDownContainerStyle={{
                             borderColor: '#EEEEEE',
+                            zIndex: 2
                         }}
                         listItemLabelStyle={{
                             fontSize: 12,
