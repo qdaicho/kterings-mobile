@@ -10,13 +10,14 @@ interface Props {
     category: string,
     distance: string
     rating: number
+    onTrashPress: () => void
 }
 
-const Product: React.FC<Props> = ({ image, name, category, distance, rating }) => {
+const Product: React.FC<Props> = ({ image, name, category, distance, rating, onTrashPress }) => {
     return (
         <View style={styles.container}>
             <View style={styles.buttonsContainer}>
-                <Pressable style={styles.button} onPress={() => console.log('Trash button pressed')}>
+                <Pressable style={styles.button} onPress={onTrashPress}>
                     <FontAwesome name="trash" size={14} color="#333" />
                 </Pressable>
                 <Pressable style={styles.button} onPress={() => router.navigate('/keditfood/')}>
