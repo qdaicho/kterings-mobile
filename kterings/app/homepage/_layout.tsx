@@ -8,6 +8,7 @@ import Heart from '@assets/images/heart_icon.svg';
 import Support from '@assets/images/support_icon.svg';
 import Star from '@assets/images/star_icon.svg';
 import { AntDesign } from '@expo/vector-icons';
+import React from 'react';
 
 export default function Layout() {
     return (

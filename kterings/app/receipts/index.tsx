@@ -102,7 +102,7 @@ export default function index() {
 
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: 30 }}>
                     <KButton
-                        onPress={() => router.navigate('/')}
+                        onPress={() => router.navigate('/trackorder/')}
                         title="Track your order"
                         buttonStyle={{ width: 'auto', paddingHorizontal: 20, height: 50 }}
                         textStyle={{fontSize:14}}

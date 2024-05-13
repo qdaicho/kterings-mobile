@@ -192,7 +192,7 @@ export default function index() {
 
             </View >
 
-            <KBottomButton onPress={() => console.log('hello')} title='Place Order' />
+            <KBottomButton onPress={() => router.navigate('/trackorder/')} title='Place Order' />
         </>
     )
 }

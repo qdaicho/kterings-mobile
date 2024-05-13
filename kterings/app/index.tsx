@@ -43,7 +43,7 @@ export default function App() {
             </SignedOut>
 
             <SignedIn>
-                <Redirect href="/payment/" />
+                <Redirect href="/trackorder/" />
                 {/* <View style={{ marginTop: Constants.statusBarHeight, flex: 1 }}>
                     <Text>Hello</Text>
                 </View> */}

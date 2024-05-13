@@ -16,10 +16,11 @@ import Product from '@/components/common/Product';
 import { products } from '@/assets/products';
 import { categories } from '@/assets/categories';
 import ProductLarge from '@/components/common/ProductLarge';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 
 import DropDownPicker from 'react-native-dropdown-picker';
 import RBSheet from 'react-native-raw-bottom-sheet';
+import KButton from '@/components/common/KButton';
 
 
 
@@ -50,10 +51,115 @@ export default function App() {
         }
     ]);
 
+    const refRBSheet = useRef<RBSheet>(null);
+    const { orders } = useLocalSearchParams<{
+        orders?: string[];
+    }>();
+
+    useEffect(() => {
+        if (orders) {
+            refRBSheet.current && refRBSheet.current.open();
+        }
+    }, [orders]);
+
+    const [contentChanged, setContentChanged] = useState(false);
+
+    useEffect(() => {
+        if (refRBSheet.current) {
+            refRBSheet.current.open();
+            const timeout = setTimeout(() => {
+                setContentChanged(true);
+            }, 5000); // Change content after 5 seconds
+            return () => clearTimeout(timeout);
+        }
+    }, []);
+
+
     return (
         <View style={styles.container}>
 
             <SignedIn>
+                <RBSheet
+                    ref={refRBSheet}
+                    animationType="slide"
+                    closeOnDragDown={true}
+                    closeOnPressMask={true}
+                    customStyles={{
+                        container: {
+                            borderWidth: 1,
+                            borderColor: "#E9E9E9",
+                            borderTopLeftRadius: 45,
+                            borderTopRightRadius: 45,
+                            height: 200,
+                        },
+                        wrapper: {
+                            backgroundColor: "transparent",
+                        },
+                        draggableIcon: {
+                            width: 100,
+                            backgroundColor: "#E9E9E9",
+                        },
+                    }}
+                >
+                    <View style={{ flex: 1, flexDirection: 'column', justifyContent: 'space-between' }}>
+                        <View style={{
+                            marginLeft: 40,
+                            marginRight: 40,
+                        }}>
+                            {contentChanged ? (
+                                <>
+                                    <Text style={{
+                                        color: '#000000',
+                                        fontFamily: 'TT Chocolates Trial Bold',
+                                        fontSize: 16,
+                                        marginTop: 20,
+                                        textAlign: 'left',
+                                    }}>Your order has been delivered!</Text>
+                                    <Text style={{
+                                        color: '#000000',
+                                        fontFamily: 'TT Chocolates Trial Medium',
+                                        fontSize: 13,
+                                        marginTop: 20,
+                                    }}>Enjoy your food! Let us know what you think by leaving a review from the Orders screen!</Text>
+                                </>
+                            ) : (
+                                <>
+                                    <Text style={{
+                                        color: '#000000',
+                                        fontFamily: 'TT Chocolates Trial Bold',
+                                        fontSize: 16,
+                                        letterSpacing: 0,
+                                        lineHeight: 29,
+                                        textAlign: 'left',
+                                    }}>Preparing your order…</Text>
+                                    <Text style={{
+                                        color: '#000000',
+                                        fontFamily: 'TT Chocolates Trial Medium',
+                                        fontSize: 13,
+                                        letterSpacing: 0,
+                                        lineHeight: 21,
+                                    }}>The Kterer is preparing your order. Sit tight!</Text>
+                                    <KButton
+                                        title="Track your order"
+                                        onPress={() => {
+                                            refRBSheet.current && refRBSheet.current.close();
+                                            // signOut();
+                                            router.push("/trackorder/");
+                                        }}
+                                        buttonStyle={{
+                                            marginTop: 20,
+                                            alignSelf: 'center'
+                                        }}
+                                        textStyle={{
+                                            fontSize: 16,
+                                        }}
+                                    />
+                                </>
+                            )}
+                        </View>
+                    </View>
+                </RBSheet>
+
                 <View style={{ marginTop: Constants.statusBarHeight + 10, flex: 1, justifyContent: 'flex-start', backgroundColor: '#FFFFFF' }}>
 
                     <View style={{ alignItems: 'center', marginBottom: 15 }}>
@@ -204,7 +310,7 @@ export default function App() {
 
                 </View>
 
-                
+
             </SignedIn>
 
         </View>

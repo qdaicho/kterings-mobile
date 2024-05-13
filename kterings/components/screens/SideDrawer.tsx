@@ -41,8 +41,8 @@ export default function SideDrawer(props: DrawerContentComponentProps) {
             <DrawerItem
                 label="Log Out"
                 onPress={() => {
-                    // router.push("/login/");
-                    // signOut();
+                    router.push("/login/");
+                    signOut();
                     refRBSheet.current && refRBSheet.current.open();
                 }}
                 labelStyle={{ fontSize: 14, fontFamily: 'TT Chocolates Trial Medium', color: '#000000' }}
