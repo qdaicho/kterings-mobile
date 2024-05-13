@@ -12,8 +12,9 @@ export default function Support() {
         buttonStyle={styles.backButton}
       />
       <WebView
-        source={{ uri: 'https://www.kterings.com/help' }}
+        source={{ uri: 'https://www.kterings.com/legal/terms-and-conditions' }}
         style={{ flex: 1 }}
+        startInLoadingState={true}
       />
     </View>
   );
