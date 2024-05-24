@@ -24,6 +24,7 @@ const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onPress, setEmailAddres
                         style={styles.kteringsemailGmail}
                         autoCorrect={false}
                         onChangeText={(emailAddress) => setEmailAddress(emailAddress)}
+                        keyboardType='email-address'
                     />
                 </View>
 

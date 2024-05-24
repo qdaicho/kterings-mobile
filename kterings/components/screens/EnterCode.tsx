@@ -21,6 +21,7 @@ const EnterCode: React.FC<EnterCodeProps> = ({onPress, setCode}) => {
                         autoCorrect={false}
                         style={styles.input}
                         onChangeText={(code) => setCode(code)}
+                        keyboardType='numeric'
                     />
                 </View>
 

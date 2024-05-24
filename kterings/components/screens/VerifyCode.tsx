@@ -20,6 +20,7 @@ const VerifyCode: React.FC<VerifyCodeProps> = ({onPress, setCode}) => {
                         secureTextEntry={true}
                         style={styles.input}
                         onChangeText={(code) => setCode(code)}
+                        keyboardType='number-pad'
                     />
                 </View>
 
