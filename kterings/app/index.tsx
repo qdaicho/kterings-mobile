@@ -43,10 +43,10 @@ export default function App() {
             </SignedOut>
 
             <SignedIn>
-                <Redirect href="/kearnings/" />
-                {/* <View style={{ marginTop: Constants.statusBarHeight, flex: 1 }}>
+                {/* <Redirect href="/homepage/" /> */}
+                <View style={{ marginTop: Constants.statusBarHeight, flex: 1 }}>
                     <Text>Hello</Text>
-                </View> */}
+                </View>
             </SignedIn>
 
         </View>

@@ -21,6 +21,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import DropDownPicker from 'react-native-dropdown-picker';
 import RBSheet from 'react-native-raw-bottom-sheet';
 import KButton from '@/components/common/KButton';
+import OnboardingComponent from '@/components/screens/Onboarding';
 
 
 
@@ -312,6 +313,10 @@ export default function App() {
 
 
             </SignedIn>
+
+            <SignedOut>
+                <OnboardingComponent />
+            </SignedOut>
 
         </View>
     );

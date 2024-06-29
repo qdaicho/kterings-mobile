@@ -16,18 +16,11 @@ interface RadioButtonProps {
     [key: string]: any; // Allow additional props
 }
 
-// Define default prop values
-const defaultProps: Required<Pick<RadioButtonProps, 'size' | 'innerColor' | 'outerColor'>> = {
-    size: 16,
-    innerColor: 'dodgerblue',
-    outerColor: 'dodgerblue',
-};
-
 // TypeScript component definition
 const RadioButton: React.FC<RadioButtonProps> = ({
-    size = defaultProps.size,
-    innerColor = defaultProps.innerColor,
-    outerColor = defaultProps.outerColor,
+    size = 16,
+    innerColor = 'dodgerblue',
+    outerColor = 'dodgerblue',
     isSelected = false,
     onPress,
     ...props
@@ -55,9 +48,6 @@ const RadioButton: React.FC<RadioButtonProps> = ({
         </TouchableOpacity>
     );
 };
-
-// Apply default prop values
-RadioButton.defaultProps = defaultProps;
 
 // Component styles
 const styles = StyleSheet.create({

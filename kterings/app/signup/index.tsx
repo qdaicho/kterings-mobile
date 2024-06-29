@@ -10,13 +10,15 @@ import VerifyCode from '@/components/screens/VerifyCode';
 import ErrorComponent from '@/components/screens/ErrorComponent';
 import SignInWithOAuth from '@/components/common/SignInWithOAuth';
 import BackButton from '@/components/common/BackButton';
-import { BACKEND_URL } from '@/app/config';
+// import { ClerkInstanceContext } from '@clerk/clerk-react';
+
+
 
 export default function Login() {
-    const refRBSheet = useRef<RBSheet>(null); // Reference to the bottom sheet
-    const [drawerHeight, setDrawerHeight] = useState(300); // State for bottom sheet height
-    const [drawerIndex, setDrawerIndex] = useState(0); // State for bottom sheet content index
-    const { width, height } = Dimensions.get('window'); // Get screen dimensions
+    const refRBSheet = useRef<RBSheet>(null);
+    const [drawerHeight, setDrawerHeight] = useState(300);
+    const [drawerIndex, setDrawerIndex] = useState(0);
+    const { width, height } = Dimensions.get('window');
 
     const { isLoaded, signUp, setActive } = useSignUp();
     const [firstName, setFirstName] = React.useState("");
@@ -26,18 +28,19 @@ export default function Login() {
     const [pendingVerification, setPendingVerification] = React.useState(false);
     const [code, setCode] = React.useState("");
     const [currentError, setCurrentError] = React.useState("");
-    const [confirmPassword, setConfirmPassword] = useState('');
-    const [passwordsMatch, setPasswordsMatch] = useState(true);
 
-    // Start the sign-up process
+    // start the sign up process.
     const onSignUpPress = async () => {
-        if (!isLoaded) return;
-
+        if (!isLoaded) {
+            return;
+        }
         refRBSheet.current && refRBSheet.current.open();
         setDrawerIndex(0);
         setDrawerHeight(300);
-
+        // Check if both passwords match
         if (password !== confirmPassword) {
+            // If passwords don't match, show error message or handle accordingly
+            // console.error("Passwords do not match");
             setCurrentError("Passwords do not match");
             refRBSheet.current && refRBSheet.current.open();
             setDrawerIndex(1);
@@ -53,11 +56,13 @@ export default function Login() {
                 password,
             });
 
-            // Send verification email
+            // send the email.
             await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
 
-            setPendingVerification(true); // Switch to pending verification UI
+            // change the UI to our pending section.
+            setPendingVerification(true);
         } catch (err: any) {
+            // console.error(JSON.stringify(err, null, 2));
             console.log(err);
             console.log(err.errors[0].message);
             setCurrentError(err.errors[0].message);
@@ -67,54 +72,35 @@ export default function Login() {
         }
     };
 
-    // Verify user with email code
+    // This verifies the user using email code that is delivered.
     const onPressVerify = async () => {
-        if (!isLoaded) return;
+        if (!isLoaded) {
+            return;
+        }
 
         try {
-            const completeSignUp = await signUp.attemptEmailAddressVerification({ code });
+            const completeSignUp = await signUp.attemptEmailAddressVerification({
+                code,
+            });
+
+            await setActive({ session: completeSignUp.createdSessionId });
+            console.log("Complete sign up:", signUp.status);
 
             if (signUp.status === "complete") {
-                const userId = signUp.createdUserId;
-                const backendUrl = "http://192.168.2.122:8000/api/register";
-
-                const registerResponse = await fetch(backendUrl, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        client_id: userId,
-                        first_name: completeSignUp.firstName,
-                        last_name: completeSignUp.lastName,
-                        user_type: "customer",
-                        email: completeSignUp.emailAddress,
-                    }),
-                });
-
-                if (!registerResponse.ok) {
-                    throw new Error('Network response was not ok');
-                }
-
-                const registerData = await registerResponse.json();
-
-                if (registerResponse.ok) {
-                    console.log(registerData.token)
-                    await setActive({ session: completeSignUp.createdSessionId });
-                    router.navigate("/homepage");
-                }
+                router.navigate("/homepage");
             }
         } catch (err: any) {
-            console.log('Error:', err.message || err);
-            if (err.errors && err.errors.length > 0) {
-                console.log(err.errors[0].message);
-                setCurrentError(err.errors[0].message);
-            } else {
-                setCurrentError(err.message);
-            }
+            // console.error(JSON.stringify(err, null, 2));
+            console.log(err.errors[0].message);
+            setCurrentError(err.errors[0].message);
             refRBSheet.current && refRBSheet.current.open();
             setDrawerIndex(1);
             setDrawerHeight(200);
         }
     };
+
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [passwordsMatch, setPasswordsMatch] = useState(true);
 
     const handlePasswordChange = (text: React.SetStateAction<string>) => {
         setPassword(text);
@@ -128,6 +114,8 @@ export default function Login() {
 
     return (
         <SignedOut>
+
+
             <View style={styles.container}>
                 <BackButton onPress={() => { router.back() }} buttonStyle={styles.backButton} />
                 <Text style={styles.createAnAccount}>Create an Account</Text>
@@ -135,7 +123,7 @@ export default function Login() {
                 <View style={styles.inputContainer}>
                     <TextInput
                         placeholder='First Name'
-                        placeholderTextColor='#B2B2B2'
+                        placeholderTextColor='#B2B2B2' // Set placeholder text color
                         style={styles.input}
                         onChangeText={(firstName) => setFirstName(firstName)}
                     />
@@ -143,7 +131,7 @@ export default function Login() {
                 <View style={styles.inputContainer}>
                     <TextInput
                         placeholder='Last Name'
-                        placeholderTextColor='#B2B2B2'
+                        placeholderTextColor='#B2B2B2' // Set placeholder text color
                         style={styles.input}
                         onChangeText={(lastName) => setLastName(lastName)}
                     />
@@ -152,11 +140,10 @@ export default function Login() {
                 <View style={styles.inputContainer}>
                     <TextInput
                         placeholder='Email/Username'
-                        placeholderTextColor='#B2B2B2'
+                        placeholderTextColor='#B2B2B2' // Set placeholder text color
                         style={styles.input}
                         autoCorrect={false}
                         onChangeText={(email) => setEmailAddress(email)}
-                        keyboardType='email-address'
                     />
                 </View>
                 <View style={[styles.inputContainer, !passwordsMatch && styles.errorContainer]}>
@@ -184,9 +171,11 @@ export default function Login() {
 
                 <KButton
                     title="Sign Up"
+                    // onPress={onSignUpPress }
                     onPress={onSignUpPress}
                     buttonStyle={{
                         marginBottom: 30,
+                        // marginTop: 10
                     }}
                     textStyle={{
                         fontSize: 20,
@@ -238,16 +227,26 @@ export default function Login() {
                         <ErrorComponent subtitle={currentError} />
                     )}
                 </RBSheet>
+
+
+
             </View>
         </SignedOut>
+
     )
 }
+
+// export default index;
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
         justifyContent: 'space-around',
+        // justifyContent: 'center',
         alignItems: 'center',
+        // marginBottom: 80
+        // paddingLeft: 20,
+        // paddingRight: 20,
     },
     backButton: {
         position: 'absolute',
@@ -258,6 +257,7 @@ const styles = StyleSheet.create({
         color: '#000000',
         fontFamily: 'TT Chocolates Trial Bold',
         fontSize: 20,
+        // fontWeight: '600',
         letterSpacing: 0,
         lineHeight: 38,
         textAlign: 'center',
@@ -281,6 +281,12 @@ const styles = StyleSheet.create({
         letterSpacing: 0,
         textAlign: 'center',
         marginBottom: 30,
+    },
+    kteringsLogo: {
+        height: 145.5,
+        width: 166.5,
+        marginBottom: 50,
+        marginTop: 60
     },
     inputContainer: {
         height: 47,
@@ -308,6 +314,8 @@ const styles = StyleSheet.create({
         textAlign: 'center',
     },
     becomeKtererContainer: {
+        // width: 'auto',
+        // width: 391,
         justifyContent: 'center',
         backgroundColor: '#BF1E2E',
     },
