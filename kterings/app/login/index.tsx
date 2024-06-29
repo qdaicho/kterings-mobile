@@ -17,6 +17,7 @@ import { Redirect, router } from "expo-router";
 import { SignedIn, SignedOut, useSignIn } from "@clerk/clerk-expo";
 import SignInWithOAuth from "@/components/common/SignInWithOAuth";
 import Logo from "@assets/images/kterings_logo.svg"
+import * as SecureStore from 'expo-secure-store';
 
 export default function Login() {
   const refRBSheet = useRef<RBSheet>(null);
@@ -36,6 +37,12 @@ export default function Login() {
   const [secondFactor, setSecondFactor] = useState(false);
   const [error, setError] = useState('');
 
+  const [currentError, setCurrentError] = useState(""); // State for current error
+
+  async function save(key: string, value: string) {
+    await SecureStore.setItemAsync(key, value);
+  }
+
   const onSignInPress = async () => {
     if (!isLoaded) {
       return;
@@ -48,12 +55,48 @@ export default function Login() {
       });
       // This is an important step,
       // This indicates the user is signed in
-      await setActive({ session: completeSignIn.createdSessionId });
-      console.log("Complete sign in:", signIn.status);
+      // await setActive({ session: completeSignIn.createdSessionId });
+      // console.log("Complete sign in:", signIn.status);
+      // if (signIn.status === "complete") {
+      //   router.navigate("/homepage");
+      // }
+
       if (signIn.status === "complete") {
-        router.navigate("/homepage");
+        const backendUrl = "http://192.168.2.248:8000/api/register";
+
+        const registerResponse = await fetch(backendUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: emailAddress,
+          }),
+        });
+
+        if (!registerResponse.ok) {
+          throw new Error('Network response was not ok');
+        }
+
+        const registerData = await registerResponse.json();
+
+        if (registerResponse.ok) {
+          // console.log()
+          save("token", registerData.token);
+          await setActive({ session: signIn.createdSessionId });
+          router.navigate("/homepage");
+        }
       }
-    } catch (err: any) { console.error(err.errors); }
+    } catch (err: any) {
+      console.log('Error:', err.message || err);
+      // if (err.errors && err.errors.length > 0) {
+      //   console.log(err.errors[0].message);
+      //   setCurrentError(err.errors[0].message);
+      // } else {
+      //   setCurrentError(err.message);
+      // }
+      // refRBSheet.current && refRBSheet.current.open();
+      // setDrawerIndex(1);
+      // setDrawerHeight(200);
+    }
   };
 
   // Send the password reset code to the user's email
@@ -160,7 +203,7 @@ export default function Login() {
           buttonStyle={{
             marginBottom: 50,
           }} />
-          
+
         <Pressable onPress={() => router.navigate("/signup")}>
           <Text style={styles.createAccount}>Create an Account</Text>
         </Pressable>
