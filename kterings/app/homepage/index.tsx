@@ -22,6 +22,7 @@ import DropDownPicker from 'react-native-dropdown-picker';
 import RBSheet from 'react-native-raw-bottom-sheet';
 import KButton from '@/components/common/KButton';
 import OnboardingComponent from '@/components/screens/Onboarding';
+import * as SecureStore from 'expo-secure-store';
 
 
 interface qImage {
@@ -67,6 +68,7 @@ interface Food {
 }
 
 export default function App() {
+
 
     const Drawer = createDrawerNavigator();
     const navigation = useNavigation();
@@ -334,7 +336,7 @@ export default function App() {
                                         data={closestProd}
                                         keyExtractor={(_, index) => index.toString()}
                                         renderItem={({ item }) => (
-                                            <Product image={item.images[0].image_url} name={item.name} category={item.ethnic_type} distance={`${item.auto_delivery_time} min away`} rating={item.rating} />
+                                            <Product image={item.images[0].image_url} name={item.name} category={item.ethnic_type} distance={`${item.auto_delivery_time} min away`} rating={item.rating} id={item.id} />
                                         )}
                                         horizontal
                                         style={{ marginTop: 10 }}
@@ -395,7 +397,7 @@ export default function App() {
                                         data={allItemsProd}
                                         keyExtractor={(_, index) => index.toString()}
                                         renderItem={({ item }) => (
-                                            <ProductLarge image={item.images[0].image_url} name={item.name} category={item.ethnic_type} distance={`${item.auto_delivery_time} min away`} rating={item.rating} />
+                                            <ProductLarge image={item.images[0].image_url} name={item.name} category={item.ethnic_type} distance={`${item.auto_delivery_time} min away`} rating={item.rating} id={item.id}/>
                                         )}
                                         style={{ marginTop: 10 }}
                                     />

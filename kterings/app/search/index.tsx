@@ -264,7 +264,7 @@ export default function Search() {
             data={prod}
             keyExtractor={(_, index) => index.toString()}
             renderItem={({ item }) => (
-              <ProductLarge image={item.images[0].image_url} name={item.name} category={item.ethnic_type} distance={`${item.auto_delivery_time} min away`} rating={item.rating} />
+              <ProductLarge image={item.images[0].image_url} name={item.name} category={item.ethnic_type} distance={`${item.auto_delivery_time} min away`} rating={item.rating} id={item.id}/>
             )}
             style={{ marginTop: 10 }}
           />

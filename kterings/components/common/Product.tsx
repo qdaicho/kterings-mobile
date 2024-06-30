@@ -8,10 +8,11 @@ interface Props {
     name: string,
     category: string,
     distance: string,
-    rating: number
+    rating: number,
+    id: string
 }
 
-const Product: React.FC<Props> = ({ image, name, category, distance, rating }) => {
+const Product: React.FC<Props> = ({ image, name, category, distance, rating, id }) => {
     // Convert image prop to ImageSourcePropType if it's a string
     const imageSource = typeof image === 'string' ? { uri: image } : image;
 
@@ -25,7 +26,8 @@ const Product: React.FC<Props> = ({ image, name, category, distance, rating }) =
                     name: name,
                     category: category,
                     distance: distance,
-                    rating: rating
+                    rating: rating,
+                    id: id
                 }
             });
         }}>

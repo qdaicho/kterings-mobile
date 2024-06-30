@@ -16,11 +16,9 @@ import PasswordReset from "@/components/screens/PasswordReset";
 import { Redirect, router } from "expo-router";
 import { SignedIn, SignedOut, useSignIn } from "@clerk/clerk-expo";
 import SignInWithOAuth from "@/components/common/SignInWithOAuth";
-import Logo from "@assets/images/kterings_logo.svg"
-import * as SecureStore from 'expo-secure-store';
+import Logo from "@assets/images/kterings_logo.svg";
+import * as SecureStore from "expo-secure-store";
 import { useUser } from "@clerk/clerk-react";
-// import { API_URL } from '@env';
-
 
 export default function Login() {
   const refRBSheet = useRef<RBSheet>(null);
@@ -30,16 +28,13 @@ export default function Login() {
   const { signIn, setActive, isLoaded } = useSignIn();
   const { isSignedIn, user } = useUser();
 
-  const [emailAddress, setEmailAddress] = React.useState("");
-  const [password, setPassword] = React.useState("");
+  const [emailAddress, setEmailAddress] = useState("");
+  const [password, setPassword] = useState("");
 
-  // forgot password variables
-  // const [emailAddress, setEmailAddress] = useState('');
-  // const [password, setPassword] = useState('');
-  const [code, setCode] = useState('');
+  const [code, setCode] = useState("");
   const [successfulCreation, setSuccessfulCreation] = useState(false);
   const [secondFactor, setSecondFactor] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   const [currentError, setCurrentError] = useState(""); // State for current error
 
@@ -59,26 +54,19 @@ export default function Login() {
       });
 
       if (signIn.status === "complete") {
-        
-        
         const registerResponse = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/register`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            // client_id: user?.id,
-            // first_name: user?.firstName,
-            // last_name: user?.lastName,
-            // user_type: "user",
+            client_id: completeSignIn.id,
             email: emailAddress,
           }),
         });
-        
 
         if (!registerResponse.ok) {
-          throw new Error('Network response was not ok');
-        }else{
-
-        const registerData = await registerResponse.json();
+          throw new Error("Network response was not ok");
+        } else {
+          const registerData = await registerResponse.json();
           save("token", registerData.token);
           console.log("Token saved:", registerData.token);
           await setActive({ session: signIn.createdSessionId });
@@ -86,217 +74,199 @@ export default function Login() {
         }
       }
     } catch (err: any) {
-      // Detailed error handling
-      console.log('Error:', err.message || err);
-  
-      // If the error has a specific structure, log the first error message
+      console.log("Error:", err.message || err);
+
       if (err.errors && err.errors.length > 0) {
         console.log(err.errors[0].message);
         setCurrentError(err.errors[0].message);
       } else {
-        // Otherwise, log the generic error message
         setCurrentError(err.message);
       }
-  
-      // Open the error sheet and set the drawer properties for error display
+
       refRBSheet.current && refRBSheet.current.open();
-      setDrawerIndex(1);
+      setDrawerIndex(4);
       setDrawerHeight(200);
     }
   };
 
-  // Send the password reset code to the user's email
   async function send_password_reset_code() {
-    console.log('emailAddress', emailAddress);
-    // e.preventDefault();
+    console.log("emailAddress", emailAddress);
+
     await signIn
       ?.create({
-        strategy: 'reset_password_email_code',
+        strategy: "reset_password_email_code",
         identifier: emailAddress,
       })
-      .then(_ => {
+      .then(() => {
         setSuccessfulCreation(true);
-        setError('');
+        setError("");
       })
-      .catch(err => {
-        console.error('error', err.errors[0].longMessage);
+      .catch((err) => {
+        console.error("error", err.errors[0].longMessage);
         setError(err.errors[0].longMessage);
       });
   }
 
-  // Reset the user's password. 
-  // Upon successful reset, the user will be 
-  // signed in and redirected to the home page
   async function reset_password() {
-    // e.preventDefault();
     await signIn
       ?.attemptFirstFactor({
-        strategy: 'reset_password_email_code',
+        strategy: "reset_password_email_code",
         code,
         password,
       })
-      .then(result => {
-        // Check if 2FA is required
-        if (result.status === 'needs_second_factor') {
+      .then((result) => {
+        if (result.status === "needs_second_factor") {
           setSecondFactor(true);
-          setError('');
-        } else if (result.status === 'complete') {
-          // Set the active session to 
-          // the newly created session (user is now signed in)
+          setError("");
+        } else if (result.status === "complete") {
           setActive({ session: result.createdSessionId });
-          setError('');
-          router.navigate('/homepage');
+          setError("");
+          router.navigate("/homepage");
         } else {
           console.log(result);
         }
       })
-      .catch(err => {
-        console.error('error', err.errors[0].longMessage)
+      .catch((err) => {
+        console.error("error", err.errors[0].longMessage);
         setError(err.errors[0].longMessage);
       });
   }
 
   return (
-    <><SignedOut>
-      <View style={styles.container}>
-        {/* <Image
-      source={require("../../assets/images/logo.png")}
-      style={styles.kteringsLogo}
-    /> */}
-        <Logo style={styles.kteringsLogo} width={110} height={110} />
-        <View style={styles.inputContainer}>
-          <TextInput
-            placeholder="Email/Username"
-            placeholderTextColor="#B2B2B2" // Set placeholder text color
-            style={styles.input}
-            autoCorrect={false}
-            onChangeText={(emailAddress) => setEmailAddress(emailAddress)} />
+    <>
+      <SignedOut>
+        <View style={styles.container}>
+          <Logo style={styles.kteringsLogo} width={110} height={110} />
+          <View style={styles.inputContainer}>
+            <TextInput
+              placeholder="Email/Username"
+              placeholderTextColor="#B2B2B2"
+              style={styles.input}
+              autoCorrect={false}
+              onChangeText={setEmailAddress}
+            />
+          </View>
+
+          <View style={styles.inputContainer}>
+            <TextInput
+              placeholder="Password"
+              placeholderTextColor="#B2B2B2"
+              style={styles.input}
+              secureTextEntry
+              autoCorrect={false}
+              textContentType="password"
+              onChangeText={setPassword}
+            />
+          </View>
+
+          <Pressable
+            onPress={() => {
+              refRBSheet.current && refRBSheet.current.open();
+              setDrawerIndex(0);
+              setDrawerHeight(300);
+            }}
+          >
+            <Text style={styles.forgotPassword}>Forgot Password?</Text>
+          </Pressable>
+
+          <KButton
+            title="Login"
+            onPress={onSignInPress}
+            buttonStyle={{ marginBottom: 20 }}
+            textStyle={{ fontSize: 20 }}
+          />
+
+          <SignInWithOAuth
+            title="Sign in with Google"
+            buttonStyle={{ marginBottom: 50 }}
+          />
+
+          <Pressable onPress={() => router.navigate("/signup")}>
+            <Text style={styles.createAccount}>Create an Account</Text>
+          </Pressable>
+          <Pressable>
+            <Text style={styles.privacyNotice}>Privacy Policy</Text>
+          </Pressable>
+
+          <RBSheet
+            ref={refRBSheet}
+            animationType="slide"
+            closeOnDragDown
+            closeOnPressMask
+            customStyles={{
+              container: {
+                borderWidth: 1,
+                borderColor: "#E9E9E9",
+                borderTopLeftRadius: 45,
+                borderTopRightRadius: 45,
+                height: drawerHeight,
+              },
+              wrapper: {
+                backgroundColor: "transparent",
+              },
+              draggableIcon: {
+                width: 100,
+                backgroundColor: "#E9E9E9",
+              },
+            }}
+          >
+            {drawerIndex === 0 && (
+              <ForgotPassword
+                onPress={() => {
+                  setDrawerHeight(300);
+                  setDrawerIndex(1);
+                  send_password_reset_code();
+                }}
+                setEmailAddress={setEmailAddress}
+              />
+            )}
+            {drawerIndex === 1 && successfulCreation && (
+              <EnterCode
+                onPress={() => {
+                  setDrawerHeight(430);
+                  setDrawerIndex(2);
+                }}
+                setCode={setCode}
+              />
+            )}
+            {drawerIndex === 2 && (
+              <ResetPassword
+                onPress={() => {
+                  setDrawerHeight(200);
+                  setDrawerIndex(3);
+                  reset_password();
+                }}
+                setPassword={setPassword}
+                password={password}
+              />
+            )}
+            {drawerIndex === 3 && <PasswordReset />}
+            {drawerIndex === 4 && 
+              <Text style={{marginTop: 20, textAlign: 'center', fontSize: 15, color: '#BF1E2E', fontFamily: 'TT Chocolates Trial Bold'}}>
+                {currentError}
+              </Text>
+            }
+          </RBSheet>
         </View>
-
-        <View style={styles.inputContainer}>
-          <TextInput
-            placeholder="Password"
-            placeholderTextColor="#B2B2B2" // Set placeholder text color
-            style={styles.input}
-            secureTextEntry={true}
-            autoCorrect={false}
-            textContentType="password"
-            onChangeText={(password) => setPassword(password)} />
-        </View>
-
-        <Pressable
-          onPress={() => {
-            refRBSheet.current && refRBSheet.current.open();
-            setDrawerIndex(0);
-            setDrawerHeight(300);
-          }}
-        >
-          <Text style={styles.forgotPassword}>Forgot Password?</Text>
-        </Pressable>
-
-        <KButton
-          title="Login"
-          onPress={onSignInPress}
-          buttonStyle={{
-            marginBottom: 20,
-          }}
-          textStyle={{
-            fontSize: 20,
-          }} />
-
-        <SignInWithOAuth
-          title="Sign in with Google"
-          buttonStyle={{
-            marginBottom: 50,
-          }} />
-
-        <Pressable onPress={() => router.navigate("/signup")}>
-          <Text style={styles.createAccount}>Create an Account</Text>
-        </Pressable>
-        <Pressable>
-          <Text style={styles.privacyNotice}>Privacy Policy</Text>
-        </Pressable>
-
-        <RBSheet
-          ref={refRBSheet}
-          animationType="slide"
-          closeOnDragDown={true}
-          closeOnPressMask={true}
-          customStyles={{
-            container: {
-              borderWidth: 1,
-              borderColor: "#E9E9E9",
-              borderTopLeftRadius: 45,
-              borderTopRightRadius: 45,
-              height: drawerHeight,
-            },
-            wrapper: {
-              backgroundColor: "transparent",
-            },
-            draggableIcon: {
-              width: 100,
-              backgroundColor: "#E9E9E9",
-            },
-          }}
-        >
-          {drawerIndex === 0 && (
-            <ForgotPassword
-              onPress={() => {
-                setDrawerHeight(300);
-                setDrawerIndex(1);
-                send_password_reset_code();
-              }}
-              setEmailAddress={setEmailAddress} />
-          )}
-          {drawerIndex === 1 && successfulCreation && (
-            <EnterCode
-              onPress={() => {
-                setDrawerHeight(430);
-                setDrawerIndex(2);
-                // reset_password();
-              }}
-              setCode={setCode} />
-          )}
-          {drawerIndex === 2 && (
-            <ResetPassword
-              onPress={() => {
-                setDrawerHeight(200);
-                setDrawerIndex(3);
-                reset_password();
-              }}
-              setPassword={setPassword}
-              password={password} />
-          )}
-          {drawerIndex === 3 && <PasswordReset />}
-        </RBSheet>
-      </View>
-    </SignedOut>
+      </SignedOut>
 
       <SignedIn>
         <Redirect href="/homepage" />
       </SignedIn>
-
     </>
   );
 }
-
-// export default index;
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: "space-around",
-    // justifyContent: 'center',
     alignItems: "center",
-    // marginBottom: 80
-    // paddingLeft: 20,
-    // paddingRight: 20,
   },
   createAccount: {
     color: "#BF1E2E",
     fontFamily: "TT Chocolates Trial Medium",
     fontSize: 18,
-    // fontWeight: '600',
     letterSpacing: 0,
     lineHeight: 38,
     textAlign: "center",
@@ -321,8 +291,6 @@ const styles = StyleSheet.create({
     marginBottom: 60,
   },
   kteringsLogo: {
-    // height: 130,
-    // width: 150,
     marginBottom: 30,
     marginTop: 90,
   },
