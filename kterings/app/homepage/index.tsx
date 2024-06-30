@@ -24,15 +24,60 @@ import KButton from '@/components/common/KButton';
 import OnboardingComponent from '@/components/screens/Onboarding';
 
 
+interface qImage {
+    id: string;
+    food_id: string;
+    image_url: string;
+    created_at: string;
+    updated_at: string;
+    deleted_at: string | null;
+}
 
+interface Quantity {
+    id: string;
+    food_id: string;
+    size: string;
+    price: string;
+    quantity: string;
+    created_at: string;
+    updated_at: string;
+    deleted_at: string | null;
+}
+
+interface Food {
+    id: string;
+    kterer_id: number;
+    name: string;
+    description: string;
+    ingredients: string;
+    halal: string;
+    kosher: boolean;
+    vegetarian: string;
+    desserts: string;
+    contains_nuts: boolean;
+    meat_type: string;
+    ethnic_type: string;
+    created_at: string;
+    updated_at: string;
+    deleted_at: string | null;
+    auto_delivery_time: number;
+    images: qImage[];
+    quantities: Quantity[];
+    rating: number;
+}
 
 export default function App() {
 
     const Drawer = createDrawerNavigator();
     const navigation = useNavigation();
 
+    const [prod, setProd] = useState<Food[]>([]);
+    const [allItemsProd, setAllItemsProd] = useState<Food[]>([]);
+    const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+    const [closestProd, setClosestProd] = useState<Food[]>([]);
+
     const [open, setOpen] = useState(false);
-    const [value, setValue] = useState(null);
+    const [value, setValue] = useState(1.0);
     const [items, setItems] = useState([
         {
             label: "Ratings 1.0+",
@@ -65,15 +110,64 @@ export default function App() {
 
     const [contentChanged, setContentChanged] = useState(false);
 
-    useEffect(() => {
-        if (refRBSheet.current) {
-            refRBSheet.current.open();
-            const timeout = setTimeout(() => {
-                setContentChanged(true);
-            }, 5000); // Change content after 5 seconds
-            return () => clearTimeout(timeout);
+
+    const getClosestProducts = (products: any[], maxDistance = 5) => {
+        const sortedProducts = products.sort((a, b) => a.auto_delivery_time - b.auto_delivery_time);
+        const closestCluster = [];
+        let deviation = 0;
+        
+        for (let i = 0; i < sortedProducts.length; i++) {
+            if (i === 0) {
+                closestCluster.push(sortedProducts[i]);
+            } else {
+                const currentDeviation = Math.abs(sortedProducts[i].auto_delivery_time - sortedProducts[i - 1].auto_delivery_time);
+                if (currentDeviation <= maxDistance) {
+                    closestCluster.push(sortedProducts[i]);
+                    deviation += currentDeviation;
+                } else {
+                    break;
+                }
+            }
         }
-    }, []);
+        return closestCluster;
+    };
+
+    
+    useEffect(() => {
+        const fetchData = async () => {
+            // if (refRBSheet.current) {
+            //     refRBSheet.current.open();
+            //     const timeout = setTimeout(() => {
+            //         setContentChanged(true);
+            //     }, 5000); // Change content after 5 seconds
+            //     return () => clearTimeout(timeout);
+            // }
+
+            // Asynchronous request to get all the food from the database upon load
+            try {
+                const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/food`, {
+                    method: 'GET',
+                });
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                const products = await response.json();
+                // Handle the fetched products here
+                // console.log(products.data);
+                setProd(products.data);
+
+                const filteredProducts = products.data.filter((product: { rating: number; ethnic_type: string; }) =>
+                    product.rating >= (value || 4.0) && (selectedCategory ? product.ethnic_type === selectedCategory : true)
+                );
+                setAllItemsProd(filteredProducts);
+                setClosestProd(getClosestProducts(filteredProducts));
+            } catch (error) {
+                console.error('Error fetching data:', error);
+            }
+        };
+
+        fetchData();
+    }, [value, selectedCategory]); // Empty dependency array to run the effect only once on mount
 
 
     return (
@@ -210,14 +304,19 @@ export default function App() {
                                 )}
                                 {item === 'categories' && (
                                     <FlatList
-
                                         data={categories}
                                         keyExtractor={(_, index) => index.toString()}
                                         renderItem={({ item }) => (
-                                            <View style={{ flexDirection: 'column', alignItems: 'center', marginBottom: 10, justifyContent: 'center', marginRight: 20, }}>
-                                                <Image source={item.image} style={{ width: 50, height: 50, marginBottom: 10 }} />
-                                                <Text style={{ fontSize: 10, fontFamily: 'TT Chocolates Trial Medium', color: '#000000' }}>{item.name}</Text>
-                                            </View>
+                                            <Pressable onPress={() => setSelectedCategory(selectedCategory === item.name ? null : item.name)}>
+                                                <View style={{ flexDirection: 'column', alignItems: 'center', marginBottom: 10, justifyContent: 'center', marginRight: 20 }}>
+                                                    <Image source={item.image} style={{ width: 50, height: 50, marginBottom: 10 }} />
+                                                    <Text style={{
+                                                        fontSize: 10,
+                                                        fontFamily: selectedCategory === item.name ? 'TT Chocolates Trial Bold' : 'TT Chocolates Trial Medium',
+                                                        color: selectedCategory === item.name ? '#BF1E2E' : '#000000'
+                                                    }}>{item.name}</Text>
+                                                </View>
+                                            </Pressable>
                                         )}
                                         horizontal
                                     />
@@ -232,10 +331,10 @@ export default function App() {
                                 )}
                                 {item === 'nearYou' && (
                                     <FlatList
-                                        data={products}
+                                        data={closestProd}
                                         keyExtractor={(_, index) => index.toString()}
                                         renderItem={({ item }) => (
-                                            <Product image={item.image} name={item.name} category={item.category} distance={item.distance} rating={item.rating} />
+                                            <Product image={item.images[0].image_url} name={item.name} category={item.ethnic_type} distance={`${item.auto_delivery_time} min away`} rating={item.rating} />
                                         )}
                                         horizontal
                                         style={{ marginTop: 10 }}
@@ -293,10 +392,10 @@ export default function App() {
                                 )}
                                 {item === 'allItems' && (
                                     <FlatList
-                                        data={products}
+                                        data={allItemsProd}
                                         keyExtractor={(_, index) => index.toString()}
                                         renderItem={({ item }) => (
-                                            <ProductLarge image={item.image} name={item.name} category={item.category} distance={item.distance} rating={item.rating} />
+                                            <ProductLarge image={item.images[0].image_url} name={item.name} category={item.ethnic_type} distance={`${item.auto_delivery_time} min away`} rating={item.rating} />
                                         )}
                                         style={{ marginTop: 10 }}
                                     />

@@ -11,7 +11,8 @@ import ErrorComponent from '@/components/screens/ErrorComponent';
 import SignInWithOAuth from '@/components/common/SignInWithOAuth';
 import BackButton from '@/components/common/BackButton';
 // import { ClerkInstanceContext } from '@clerk/clerk-react';
-
+import * as SecureStore from 'expo-secure-store';
+import { useUser } from "@clerk/clerk-react";
 
 
 export default function Login() {
@@ -28,7 +29,11 @@ export default function Login() {
     const [pendingVerification, setPendingVerification] = React.useState(false);
     const [code, setCode] = React.useState("");
     const [currentError, setCurrentError] = React.useState("");
+    const { isSignedIn, user } = useUser();
 
+    async function save(key: string, value: string) {
+        await SecureStore.setItemAsync(key, value);
+    }
     // start the sign up process.
     const onSignUpPress = async () => {
         if (!isLoaded) {
@@ -83,11 +88,52 @@ export default function Login() {
                 code,
             });
 
-            await setActive({ session: completeSignUp.createdSessionId });
-            console.log("Complete sign up:", signUp.status);
+            if (completeSignUp.status !== "complete") {
+                console.log("completeSignUp", completeSignUp);
+                /*  investigate the response, to see if there was an error
+                         or if the user needs to complete more steps.*/
+                console.log(JSON.stringify(completeSignUp, null, 2));
+            }
+
 
             if (signUp.status === "complete") {
-                router.navigate("/homepage");
+
+                await setActive({ session: completeSignUp.createdSessionId });
+                console.log("Complete sign up:", signUp.status);
+                const userId = completeSignUp.createdUserId;
+
+                // Update the metadata
+                const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/kterer`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ userId, ktererSignUpCompleted: false }),
+                });
+
+                console.log(user?.id)
+                const registerResponse = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/register`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        client_id: userId,
+                        first_name: completeSignUp.firstName,
+                        last_name: completeSignUp.lastName,
+                        user_type: "user",
+                        email: completeSignUp.emailAddress,
+                    }),
+                });
+
+                if (!registerResponse.ok) {
+                    throw new Error('Network response was not ok');
+                } else {
+
+                    const registerData = await registerResponse.json();
+                    save("token", registerData.token);
+                    console.log("Token saved:", registerData.token);
+                    // await setActive({ session: completeSignUp.createdSessionId });
+                    router.navigate("/homepage");
+                }
             }
         } catch (err: any) {
             // console.error(JSON.stringify(err, null, 2));

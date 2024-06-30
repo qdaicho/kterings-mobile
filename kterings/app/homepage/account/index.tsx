@@ -33,7 +33,7 @@ export default function Account() {
     try {
       const token = await SecureStore.getItemAsync("token");
 
-      const response = await fetch('http://192.168.2.122:8000/api/user', {
+      const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/user`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",

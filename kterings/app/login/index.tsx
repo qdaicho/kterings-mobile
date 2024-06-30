@@ -18,6 +18,9 @@ import { SignedIn, SignedOut, useSignIn } from "@clerk/clerk-expo";
 import SignInWithOAuth from "@/components/common/SignInWithOAuth";
 import Logo from "@assets/images/kterings_logo.svg"
 import * as SecureStore from 'expo-secure-store';
+import { useUser } from "@clerk/clerk-react";
+// import { API_URL } from '@env';
+
 
 export default function Login() {
   const refRBSheet = useRef<RBSheet>(null);
@@ -25,6 +28,7 @@ export default function Login() {
   const [drawerIndex, setDrawerIndex] = useState(0);
 
   const { signIn, setActive, isLoaded } = useSignIn();
+  const { isSignedIn, user } = useUser();
 
   const [emailAddress, setEmailAddress] = React.useState("");
   const [password, setPassword] = React.useState("");
@@ -53,49 +57,51 @@ export default function Login() {
         identifier: emailAddress,
         password,
       });
-      // This is an important step,
-      // This indicates the user is signed in
-      // await setActive({ session: completeSignIn.createdSessionId });
-      // console.log("Complete sign in:", signIn.status);
-      // if (signIn.status === "complete") {
-      //   router.navigate("/homepage");
-      // }
 
       if (signIn.status === "complete") {
-        const backendUrl = "http://192.168.2.248:8000/api/register";
-
-        const registerResponse = await fetch(backendUrl, {
+        
+        
+        const registerResponse = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/register`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
+            // client_id: user?.id,
+            // first_name: user?.firstName,
+            // last_name: user?.lastName,
+            // user_type: "user",
             email: emailAddress,
           }),
         });
+        
 
         if (!registerResponse.ok) {
           throw new Error('Network response was not ok');
-        }
+        }else{
 
         const registerData = await registerResponse.json();
-
-        if (registerResponse.ok) {
-          // console.log()
           save("token", registerData.token);
+          console.log("Token saved:", registerData.token);
           await setActive({ session: signIn.createdSessionId });
           router.navigate("/homepage");
         }
       }
     } catch (err: any) {
+      // Detailed error handling
       console.log('Error:', err.message || err);
-      // if (err.errors && err.errors.length > 0) {
-      //   console.log(err.errors[0].message);
-      //   setCurrentError(err.errors[0].message);
-      // } else {
-      //   setCurrentError(err.message);
-      // }
-      // refRBSheet.current && refRBSheet.current.open();
-      // setDrawerIndex(1);
-      // setDrawerHeight(200);
+  
+      // If the error has a specific structure, log the first error message
+      if (err.errors && err.errors.length > 0) {
+        console.log(err.errors[0].message);
+        setCurrentError(err.errors[0].message);
+      } else {
+        // Otherwise, log the generic error message
+        setCurrentError(err.message);
+      }
+  
+      // Open the error sheet and set the drawer properties for error display
+      refRBSheet.current && refRBSheet.current.open();
+      setDrawerIndex(1);
+      setDrawerHeight(200);
     }
   };
 

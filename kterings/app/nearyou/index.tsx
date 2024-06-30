@@ -16,7 +16,95 @@ const sampleNotifications: any[] = [
   // Add more sample notifications as needed
 ];
 
+interface Image {
+  id: string;
+  food_id: string;
+  image_url: string;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
+}
+
+interface Quantity {
+  id: string;
+  food_id: string;
+  size: string;
+  price: string;
+  quantity: string;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
+}
+
+interface Food {
+  id: string;
+  kterer_id: number;
+  name: string;
+  description: string;
+  ingredients: string;
+  halal: string;
+  kosher: boolean;
+  vegetarian: string;
+  desserts: string;
+  contains_nuts: boolean;
+  meat_type: string;
+  ethnic_type: string;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
+  auto_delivery_time: number;
+  images: Image[];
+  quantities: Quantity[];
+  rating: number;
+}
+
 export default function Notifications() {
+
+  const [prod, setProd] = useState<Food[]>([]);
+
+
+  const getClosestProducts = (products: any[], maxDistance = 5) => {
+    const sortedProducts = products.sort((a, b) => a.auto_delivery_time - b.auto_delivery_time);
+    const closestCluster = [];
+    let deviation = 0;
+
+    for (let i = 0; i < sortedProducts.length; i++) {
+      if (i === 0) {
+        closestCluster.push(sortedProducts[i]);
+      } else {
+        const currentDeviation = Math.abs(sortedProducts[i].auto_delivery_time - sortedProducts[i - 1].auto_delivery_time);
+        if (currentDeviation <= maxDistance) {
+          closestCluster.push(sortedProducts[i]);
+          deviation += currentDeviation;
+        } else {
+          break;
+        }
+      }
+    }
+    return closestCluster;
+  };
+
+  useEffect(() => {
+    const fetchData = async () => {
+      // Asynchronous request to get all the food from the database upon load
+      try {
+        const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/food`, {
+          method: 'GET',
+        });
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        const products = await response.json();
+        // Handle the fetched products here
+        // console.log(products.data);
+        setProd(products.data);
+      } catch (error) {
+        console.error('Error fetching data:', error);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   return (
     <View style={styles.container}>
@@ -24,10 +112,10 @@ export default function Notifications() {
       <Text style={{ fontSize: 18, fontFamily: 'TT Chocolates Trial Bold', color: '#000000', marginTop: 120, marginBottom: 20 }}>Near You</Text>
 
       <FlatList
-        data={products}
+        data={getClosestProducts(prod)}
         keyExtractor={(_, index) => index.toString()}
         renderItem={({ item }) => (
-          <ProductLarge image={item.image} name={item.name} category={item.category} distance={item.distance} rating={item.rating} />
+          <ProductLarge image={item.images[0].image_url} name={item.name} category={item.ethnic_type} distance={`${item.auto_delivery_time} min away`} rating={item.rating} />
         )}
         style={{ marginTop: 10 }}
       />
