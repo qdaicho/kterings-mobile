@@ -9,6 +9,7 @@ import { products } from '@/assets/products';
 import RecentSearchIcon from '@/assets/images/recent_searches.svg';
 import ProductLarge from '@/components/common/ProductLarge';
 import DropDownPicker from 'react-native-dropdown-picker';
+import Fuse from 'fuse.js';
 
 interface qImage {
   id: string;
@@ -53,29 +54,15 @@ interface Food {
 }
 
 function deepSearch(items: Food[], searchTerm: string): Food[] {
-  const lowerCaseSearchTerm = searchTerm.toLowerCase();
+  const options = {
+    keys: ['name', 'description', 'ethnic_type'],
+    threshold: 0.6 // Adjust the threshold for fuzziness
+  };
 
-  return items.filter(item => {
-    return Object.values(item).some(value => {
-      if (typeof value === 'string') {
-        return value.toLowerCase().includes(lowerCaseSearchTerm);
-      } else if (typeof value === 'number') {
-        return value.toString().includes(lowerCaseSearchTerm);
-      } else if (Array.isArray(value)) {
-        return value.some(subItem => {
-          return Object.values(subItem).some(subValue => {
-            if (typeof subValue === 'string') {
-              return subValue.toLowerCase().includes(lowerCaseSearchTerm);
-            } else if (typeof subValue === 'number') {
-              return subValue.toString().includes(lowerCaseSearchTerm);
-            }
-            return false;
-          });
-        });
-      }
-      return false;
-    });
-  });
+  const fuse = new Fuse(items, options);
+  const results = fuse.search(searchTerm);
+
+  return results.map(result => result.item);
 }
 
 
@@ -124,9 +111,11 @@ export default function Search() {
 
         setProd(deepSearch(products.data, searchTerm));
 
-        // const filteredProducts = products.data.filter((product: { rating: number; ethnic_type: string; }) =>
-        //   product.rating >= (value || 4.0) && (selectedCategory ? product.ethnic_type === selectedCategory : true)
-        // );
+        const filteredProducts = products.data.filter((product: { rating: number; ethnic_type: string; }) =>
+          product.rating >= (value || 4.0) && (selectedCategory ? product.ethnic_type === selectedCategory : true)
+        );
+
+        setProd(filteredProducts);
         // setAllItemsProd(filteredProducts);
         // setClosestProd(getClosestProducts(filteredProducts));
       } catch (error) {
@@ -140,16 +129,23 @@ export default function Search() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Pressable
-          onPress={() => {
-            if (showResults) {
-              setShowResults(false);
-            } else {
-              router.back();
-            }
-          }}
-          style={styles.backButton}
-        ><BackChevron style={styles.backButton} width={15} height={15} /></Pressable>
+      <Pressable
+      onPress={() => {
+        if (showResults) {
+          setShowResults(false);
+        } else {
+          router.back();
+        }
+      }}
+      style={({ pressed }) => ({
+        padding: 10,
+        backgroundColor: pressed ? '#E9E9E9' : 'transparent',
+        borderRadius: 5,
+        marginRight: 10,
+      })}
+    >
+      <BackChevron width={15} height={15} style={styles.backButton} />
+    </Pressable>
         <View style={styles.inputContainer}>
           <Ionicons name="search-outline" size={24} color="#969696" style={styles.icon} />
           <TextInput
