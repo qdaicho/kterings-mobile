@@ -79,6 +79,31 @@ interface Review {
   images: string[];
 }
 
+interface KtererProfile {
+  id: string;
+  user_id: string;
+  is_verified: number;
+  admin_verified: number;
+  stripe_account_id: string | null;
+  profile_image_url: string;
+  bio: string;
+  ethnicity: string;
+  experienceUnit: string | null;
+  experienceValue: string | null;
+  street_address: string;
+  city: string;
+  apartment: string;
+  province: string;
+  country: string;
+  postal_code: string;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
+  door_dash_business_id: string;
+  door_dash_store_id: string;
+}
+
+
 const RadioButton = ({ label, isSelected, onPress }: { label: string, isSelected: boolean, onPress: () => void }) => {
   return (
     <Pressable onPress={onPress} style={styles.radioButton}>
@@ -108,6 +133,8 @@ const ProductScreen = () => {
   const [selectedSize, setSelectedSize] = useState<'small' | 'medium' | 'large'>('small');
   const [quantities, setQuantities] = useState({ small: 0, medium: 0, large: 0 });
   const [totalPrice, setTotalPrice] = useState(0);
+  const [kterer, setKterer] = useState<KtererProfile[]>();
+
 
   const capitalize = (str: string): string =>
     str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
@@ -186,11 +213,30 @@ const ProductScreen = () => {
             },
           }
         );
-
         if (!userReviewsResponse.ok) throw new Error('Network response was not ok');
         const userReviews = await userReviewsResponse.json();
         setCustomerReviews(userReviews.data);
-        console.log(userReviews);
+        // console.log(userReviews);
+
+        console.log(token);
+        
+        const ktererProfile = await fetch(
+          `${process.env.EXPO_PUBLIC_API_URL}/kterer/53`,
+          {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+        
+        if (!ktererProfile.ok) throw new Error('Network response was not ok');
+        const kterer = await ktererProfile.json();
+        
+        console.log(kterer);
+        setKterer(kterer.data);
+
       } catch (error) {
         console.error('Error fetching data:', error);
       }
@@ -376,7 +422,7 @@ const ProductScreen = () => {
             <View style={styles.sellerSection}>
               <Text style={styles.sellerTitle}>Made By</Text>
               <View style={styles.sellerInfo}>
-                <Image source={require('@assets/images/bakery.png')} style={styles.sellerImage} />
+                <Image source={require('@assets/images/profile_picture.png')} style={styles.sellerImage} />
                 <View style={styles.sellerDetails}>
                   <Text style={styles.sellerName}>Bakery</Text>
                   <Pressable onPress={() => router.navigate({ pathname: '/sellerpage/' })}>
@@ -384,7 +430,7 @@ const ProductScreen = () => {
                   </Pressable>
                 </View>
                 <View style={styles.sellerRating}>
-                  {renderSellerRating(5)}
+                  {renderSellerRating(1)}
                 </View>
               </View>
             </View>

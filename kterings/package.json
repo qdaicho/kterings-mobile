@@ -45,7 +45,7 @@
     "install": "^0.13.0",
     "react": "18.2.0",
     "react-dom": "18.2.0",
-    "react-native": "0.74.2",
+    "react-native": "^0.74.3",
     "react-native-animated-pagination-dot": "^0.4.0",
     "react-native-animated-pagination-dots": "^0.1.73",
     "react-native-dotenv": "^3.4.11",
