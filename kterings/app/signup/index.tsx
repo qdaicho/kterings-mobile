@@ -17,6 +17,7 @@ import SignInWithOAuth from "@/components/common/SignInWithOAuth";
 import BackButton from "@/components/common/BackButton";
 import * as SecureStore from "expo-secure-store";
 import { useUser } from "@clerk/clerk-react";
+import { StatusBar } from "expo-status-bar";
 
 export default function Login() {
     const refRBSheet = useRef<RBSheet>(null);
@@ -131,6 +132,8 @@ export default function Login() {
 
     return (
         <>
+            <StatusBar style="dark" />
+
             <SignedOut>
                 <View style={styles.container}>
                     <BackButton onPress={() => router.back()} buttonStyle={styles.backButton} />

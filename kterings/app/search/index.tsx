@@ -10,48 +10,8 @@ import RecentSearchIcon from '@/assets/images/recent_searches.svg';
 import ProductLarge from '@/components/common/ProductLarge';
 import DropDownPicker from 'react-native-dropdown-picker';
 import Fuse from 'fuse.js';
+import { Food } from '@/hooks/types';
 
-interface qImage {
-  id: string;
-  food_id: string;
-  image_url: string;
-  created_at: string;
-  updated_at: string;
-  deleted_at: string | null;
-}
-
-interface Quantity {
-  id: string;
-  food_id: string;
-  size: string;
-  price: string;
-  quantity: string;
-  created_at: string;
-  updated_at: string;
-  deleted_at: string | null;
-}
-
-interface Food {
-  id: string;
-  kterer_id: number;
-  name: string;
-  description: string;
-  ingredients: string;
-  halal: string;
-  kosher: boolean;
-  vegetarian: string;
-  desserts: string;
-  contains_nuts: boolean;
-  meat_type: string;
-  ethnic_type: string;
-  created_at: string;
-  updated_at: string;
-  deleted_at: string | null;
-  auto_delivery_time: number;
-  images: qImage[];
-  quantities: Quantity[];
-  rating: number;
-}
 
 function deepSearch(items: Food[], searchTerm: string): Food[] {
   const options = {
@@ -129,23 +89,23 @@ export default function Search() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-      <Pressable
-      onPress={() => {
-        if (showResults) {
-          setShowResults(false);
-        } else {
-          router.back();
-        }
-      }}
-      style={({ pressed }) => ({
-        padding: 10,
-        backgroundColor: pressed ? '#E9E9E9' : 'transparent',
-        borderRadius: 5,
-        marginRight: 10,
-      })}
-    >
-      <BackChevron width={15} height={15} style={styles.backButton} />
-    </Pressable>
+        <Pressable
+          onPress={() => {
+            if (showResults) {
+              setShowResults(false);
+            } else {
+              router.back();
+            }
+          }}
+          style={({ pressed }) => ({
+            padding: 10,
+            backgroundColor: pressed ? '#E9E9E9' : 'transparent',
+            borderRadius: 5,
+            marginRight: 10,
+          })}
+        >
+          <BackChevron width={15} height={15} style={styles.backButton} />
+        </Pressable>
         <View style={styles.inputContainer}>
           <Ionicons name="search-outline" size={24} color="#969696" style={styles.icon} />
           <TextInput
@@ -250,13 +210,43 @@ export default function Search() {
               showArrowIcon={false}
               showTickIcon={false}
               dropDownDirection="BOTTOM"
-              style={styles.dropDownPicker}
-              textStyle={styles.dropDownPickerText}
-              containerStyle={styles.dropDownContainer}
-              dropDownContainerStyle={styles.dropDownListContainer}
-              listItemLabelStyle={styles.dropDownListItemText}
-              itemSeparator
-              itemSeparatorStyle={styles.dropDownSeparator}
+              style={{
+                backgroundColor: '#BF1E2E',
+                width: 100,
+                borderColor: '#EEEEEE',
+                // borderRadius: 35,
+                borderStartEndRadius: 35,
+                borderStartStartRadius: 35,
+                borderEndEndRadius: 35,
+                borderEndStartRadius: 35,
+                minHeight: 35,
+                zIndex: 2
+              }}
+              textStyle={{
+                fontSize: 12,
+                fontFamily: 'TT Chocolates Trial Medium',
+                color: '#FFFFFF',
+                textAlign: 'center',
+              }}
+              containerStyle={{ width: 'auto' }}
+              dropDownContainerStyle={{
+                width: 100,
+                borderColor: '#EEEEEE',
+                // borderRadius: 20,
+                marginTop: 10,
+                borderStartEndRadius: 20,
+                borderStartStartRadius: 20,
+                borderEndEndRadius: 20,
+                borderEndStartRadius: 20,
+              }}
+              listItemLabelStyle={{
+                fontSize: 12,
+                fontFamily: 'TT Chocolates Trial Medium',
+                color: '#000000',
+                textAlign: 'center',
+              }}
+              itemSeparator={true}
+              itemSeparatorStyle={{ height: 1, backgroundColor: '#EEEEEE', marginHorizontal: 10 }}
             />
           </View>
 
@@ -264,7 +254,7 @@ export default function Search() {
             data={prod}
             keyExtractor={(_, index) => index.toString()}
             renderItem={({ item }) => (
-              <ProductLarge image={item.images[0].image_url} name={item.name} category={item.ethnic_type} distance={`${item.auto_delivery_time} min away`} rating={item.rating} id={item.id}/>
+              <ProductLarge image={item.images[0].image_url} name={item.name} category={item.ethnic_type} distance={`${item.auto_delivery_time} min away`} rating={item.rating} id={item.id} />
             )}
             style={{ marginTop: 10 }}
           />
@@ -417,39 +407,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontFamily: 'TT Chocolates Trial Bold',
     color: '#000000',
-  },
-  dropDownPicker: {
-    backgroundColor: '#BF1E2E',
-    width: 100,
-    borderColor: '#EEEEEE',
-    borderRadius: 15,
-    minHeight: 35,
-  },
-  dropDownPickerText: {
-    fontSize: 12,
-    fontFamily: 'TT Chocolates Trial Medium',
-    color: '#FFFFFF',
-    textAlign: 'center',
-  },
-  dropDownContainer: {
-    width: 'auto',
-  },
-  dropDownListContainer: {
-    width: 100,
-    borderColor: '#EEEEEE',
-    borderRadius: 20,
-    marginTop: 10,
-  },
-  dropDownListItemText: {
-    fontSize: 12,
-    fontFamily: 'TT Chocolates Trial Medium',
-    color: '#000000',
-    textAlign: 'center',
-  },
-  dropDownSeparator: {
-    height: 1,
-    backgroundColor: '#EEEEEE',
-    marginHorizontal: 10,
   },
 
 

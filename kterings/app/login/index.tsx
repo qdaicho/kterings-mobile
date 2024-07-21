@@ -19,6 +19,7 @@ import SignInWithOAuth from "@/components/common/SignInWithOAuth";
 import Logo from "@assets/images/kterings_logo.svg";
 import * as SecureStore from "expo-secure-store";
 import { useUser } from "@clerk/clerk-react";
+import { StatusBar } from 'expo-status-bar';
 
 export default function Login() {
   const refRBSheet = useRef<RBSheet>(null);
@@ -134,6 +135,8 @@ export default function Login() {
 
   return (
     <>
+      <StatusBar style="dark" />
+
       <SignedOut>
         <View style={styles.container}>
           <Logo style={styles.kteringsLogo} width={110} height={110} />
@@ -241,8 +244,8 @@ export default function Login() {
               />
             )}
             {drawerIndex === 3 && <PasswordReset />}
-            {drawerIndex === 4 && 
-              <Text style={{marginTop: 20, textAlign: 'center', fontSize: 15, color: '#BF1E2E', fontFamily: 'TT Chocolates Trial Bold'}}>
+            {drawerIndex === 4 &&
+              <Text style={{ marginTop: 20, textAlign: 'center', fontSize: 15, color: '#BF1E2E', fontFamily: 'TT Chocolates Trial Bold' }}>
                 {currentError}
               </Text>
             }

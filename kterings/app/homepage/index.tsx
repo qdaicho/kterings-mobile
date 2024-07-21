@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, SetStateAction } from 'react';
 import { View, StyleSheet, Text, TextInput, Dimensions, Pressable, Image, ListRenderItem, SafeAreaView } from 'react-native';
 import * as Font from 'expo-font';
 import Constants from 'expo-constants';
@@ -23,49 +23,9 @@ import RBSheet from 'react-native-raw-bottom-sheet';
 import KButton from '@/components/common/KButton';
 import OnboardingComponent from '@/components/screens/Onboarding';
 import * as SecureStore from 'expo-secure-store';
+import {Food, Quantity, qImage} from '@/hooks/types';
 
 
-interface qImage {
-    id: string;
-    food_id: string;
-    image_url: string;
-    created_at: string;
-    updated_at: string;
-    deleted_at: string | null;
-}
-
-interface Quantity {
-    id: string;
-    food_id: string;
-    size: string;
-    price: string;
-    quantity: string;
-    created_at: string;
-    updated_at: string;
-    deleted_at: string | null;
-}
-
-interface Food {
-    id: string;
-    kterer_id: number;
-    name: string;
-    description: string;
-    ingredients: string;
-    halal: string;
-    kosher: boolean;
-    vegetarian: string;
-    desserts: string;
-    contains_nuts: boolean;
-    meat_type: string;
-    ethnic_type: string;
-    created_at: string;
-    updated_at: string;
-    deleted_at: string | null;
-    auto_delivery_time: number;
-    images: qImage[];
-    quantities: Quantity[];
-    rating: number;
-}
 
 export default function App() {
 
@@ -104,6 +64,19 @@ export default function App() {
         orders?: string[];
     }>();
 
+    const getStoredAddress = async (): Promise<SetStateAction<string | null>> => {
+        try {
+            const storedAddress = await SecureStore.getItemAsync('selectedAddress');
+            if (storedAddress) {
+                return JSON.parse(storedAddress).address;
+            }
+            return null;
+        } catch (error) {
+            console.error('Error getting stored address:', error);
+            return null;
+        }
+    };
+
     useEffect(() => {
         if (orders) {
             refRBSheet.current && refRBSheet.current.open();
@@ -112,12 +85,13 @@ export default function App() {
 
     const [contentChanged, setContentChanged] = useState(false);
 
+    const [selectedAddress, setSelectedAddress] = useState<string | null>(null);
 
     const getClosestProducts = (products: any[], maxDistance = 5) => {
         const sortedProducts = products.sort((a, b) => a.auto_delivery_time - b.auto_delivery_time);
         const closestCluster = [];
         let deviation = 0;
-        
+
         for (let i = 0; i < sortedProducts.length; i++) {
             if (i === 0) {
                 closestCluster.push(sortedProducts[i]);
@@ -134,7 +108,7 @@ export default function App() {
         return closestCluster;
     };
 
-    
+
     useEffect(() => {
         const fetchData = async () => {
             // if (refRBSheet.current) {
@@ -163,6 +137,7 @@ export default function App() {
                 );
                 setAllItemsProd(filteredProducts);
                 setClosestProd(getClosestProducts(filteredProducts));
+                setSelectedAddress(await getStoredAddress());
             } catch (error) {
                 console.error('Error fetching data:', error);
             }
@@ -263,19 +238,22 @@ export default function App() {
                         <View style={{ flexDirection: 'row', justifyContent: 'space-between', width: '90%', alignItems: 'center', marginBottom: 10 }}>
                             <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
                                 <Entypo name="menu" size={40} color="#BF1E2E" onPress={() => navigation.dispatch(DrawerActions.openDrawer())} />
-                                <View style={{ marginLeft: 20 }}>
+
+                                <View style={{ marginLeft: 20, width: '65%' }}>
                                     <Text style={{ fontSize: 15, fontFamily: 'TT Chocolates Trial Bold', color: '#000000' }}>Delivering to</Text>
-                                    <Text style={{ fontSize: 12, fontFamily: 'TT Chocolates Trial Regular', color: '#969696' }}>address</Text>
+                                    <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                                        <Text style={{ fontSize: 12, fontFamily: 'TT Chocolates Trial Regular', color: '#969696' }}>
+                                            {selectedAddress}
+                                        </Text>
+                                    </ScrollView>
                                 </View>
                             </View>
                             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                                <Pressable onPress={() => router.navigate('/notifications')}>
-                                    <MaterialCommunityIcons name="bell-outline" size={24} color="#BF1E2E" style={{ marginRight: 20 }} />
 
-                                </Pressable>
-                                <Pressable onPress={() => router.navigate('/cart')}>
-                                    <MaterialCommunityIcons name="shopping-outline" size={24} color="#BF1E2E" />
-                                </Pressable>
+                                <MaterialCommunityIcons name="bell-outline" size={24} color="#BF1E2E" style={{ marginRight: 20 }} onPress={() => router.navigate('/notifications')} />
+
+                                <MaterialCommunityIcons name="shopping-outline" size={24} color="#BF1E2E" onPress={() => router.navigate('/cart')} />
+
                             </View>
                         </View>
                         <View style={styles.inputContainer}>
@@ -397,7 +375,7 @@ export default function App() {
                                         data={allItemsProd}
                                         keyExtractor={(_, index) => index.toString()}
                                         renderItem={({ item }) => (
-                                            <ProductLarge image={item.images[0].image_url} name={item.name} category={item.ethnic_type} distance={`${item.auto_delivery_time} min away`} rating={item.rating} id={item.id}/>
+                                            <ProductLarge image={item.images[0].image_url} name={item.name} category={item.ethnic_type} distance={`${item.auto_delivery_time} min away`} rating={item.rating} id={item.id} />
                                         )}
                                         style={{ marginTop: 10 }}
                                     />

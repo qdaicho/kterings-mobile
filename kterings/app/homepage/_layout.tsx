@@ -9,10 +9,13 @@ import Support from '@assets/images/support_icon.svg';
 import Star from '@assets/images/star_icon.svg';
 import { AntDesign } from '@expo/vector-icons';
 import React from 'react';
+import { StatusBar } from 'expo-status-bar';
 
 export default function Layout() {
     return (
         <GestureHandlerRootView style={{ flex: 1 }}>
+            <StatusBar style="dark" />
+
             <Drawer
                 screenOptions={{
                     drawerStyle: { width: Dimensions.get('window').width },

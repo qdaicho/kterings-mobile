@@ -44,8 +44,9 @@ const styles = StyleSheet.create({
     buttonContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        padding: 10,
-        borderRadius: 5,
+        // padding: 10,
+        // borderRadius: 5,
+        marginTop: 20,
     },
     pressed: {
         backgroundColor: '#f0f0f0', // Light gray background when pressed

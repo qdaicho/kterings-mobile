@@ -17,92 +17,9 @@ import Minus from '@assets/images/minus.svg';
 import Plus from '@assets/images/plus.svg';
 import KBottomButton from '@/components/common/KBottomButton';
 import * as SecureStore from 'expo-secure-store';
-
-interface UserFoodReview {
-  reviewText: string;
-  author: string;
-  rating: number;
-}
-
-interface qImage {
-  id: string;
-  food_id: string;
-  image_url: string;
-  created_at: string;
-  updated_at: string;
-  deleted_at: string | null;
-}
-
-interface Quantity {
-  id: string;
-  food_id: string;
-  size: 'small' | 'medium' | 'large';
-  price: string;
-  quantity: string;
-  created_at: string;
-  updated_at: string;
-  deleted_at: string | null;
-}
-
-interface Food {
-  id: string;
-  kterer_id: number;
-  name: string;
-  description: string;
-  ingredients: string;
-  halal: string;
-  kosher: boolean;
-  vegetarian: string;
-  desserts: string;
-  contains_nuts: boolean;
-  meat_type: string;
-  ethnic_type: string;
-  created_at: string;
-  updated_at: string;
-  deleted_at: string | null;
-  auto_delivery_time: number;
-  images: qImage[];
-  quantities: Quantity[];
-  rating: number;
-}
-
-interface Review {
-  id: string;
-  user: {
-    first_name: string;
-    last_name: string;
-    email: string;
-  };
-  rating: number;
-  review: string;
-  created_at: string;
-  images: string[];
-}
-
-interface KtererProfile {
-  id: string;
-  user_id: string;
-  is_verified: number;
-  admin_verified: number;
-  stripe_account_id: string | null;
-  profile_image_url: string;
-  bio: string;
-  ethnicity: string;
-  experienceUnit: string | null;
-  experienceValue: string | null;
-  street_address: string;
-  city: string;
-  apartment: string;
-  province: string;
-  country: string;
-  postal_code: string;
-  created_at: string;
-  updated_at: string;
-  deleted_at: string | null;
-  door_dash_business_id: string;
-  door_dash_store_id: string;
-}
-
+import useCart, { CartItem } from '@/hooks/useCart';
+import { useCartCount } from '@/hooks/CartContext';
+import { Food, Quantity, qImage, Review, User, KtererProfile, KtererResponse } from '@/hooks/types';
 
 const RadioButton = ({ label, isSelected, onPress }: { label: string, isSelected: boolean, onPress: () => void }) => {
   return (
@@ -133,8 +50,10 @@ const ProductScreen = () => {
   const [selectedSize, setSelectedSize] = useState<'small' | 'medium' | 'large'>('small');
   const [quantities, setQuantities] = useState({ small: 0, medium: 0, large: 0 });
   const [totalPrice, setTotalPrice] = useState(0);
-  const [kterer, setKterer] = useState<KtererProfile[]>();
+  const [ktererProfile, setKtererProfile] = useState<KtererResponse>();
 
+  const { addItemToCart, cartItems } = useCart();
+  const { cartCount, updateCartCount } = useCartCount();
 
   const capitalize = (str: string): string =>
     str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
@@ -194,57 +113,48 @@ const ProductScreen = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        const fetchWithToken = async (url: string | URL | Request, token: string | null) => {
+          const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`,
+            },
+          });
+          if (!response.ok) throw new Error('Network response was not ok');
+          return response.json();
+        };
+
         const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/food`);
         if (!response.ok) throw new Error('Network response was not ok');
         const products = await response.json();
-        const productData = products.data.filter((item: Food) => item.id === id)[0];
+        const productData = products.data.find((item: Food) => item.id === id);
+
         setProd([productData]);
         setTags(extractTags(productData));
 
-        let token = await SecureStore.getItemAsync('token');
+        const token = await SecureStore.getItemAsync('token');
 
-        const userReviewsResponse = await fetch(
+        const userReviews = await fetchWithToken(
           `${process.env.EXPO_PUBLIC_API_URL}/food/reviews/${id}`,
-          {
-            method: 'GET',
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${token}`,
-            },
-          }
+          token
         );
-        if (!userReviewsResponse.ok) throw new Error('Network response was not ok');
-        const userReviews = await userReviewsResponse.json();
         setCustomerReviews(userReviews.data);
-        // console.log(userReviews);
 
-        console.log(token);
-        
-        const ktererProfile = await fetch(
-          `${process.env.EXPO_PUBLIC_API_URL}/kterer/53`,
-          {
-            method: 'GET',
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${token}`,
-            },
-          }
+        const ktererProfile = await fetchWithToken(
+          `${process.env.EXPO_PUBLIC_API_URL}/kterer/${productData.kterer_id}`,
+          token
         );
-        
-        if (!ktererProfile.ok) throw new Error('Network response was not ok');
-        const kterer = await ktererProfile.json();
-        
-        console.log(kterer);
-        setKterer(kterer.data);
+        setKtererProfile(ktererProfile);
 
+        console.log(JSON.stringify(ktererProfile, null, 2));
       } catch (error) {
         console.error('Error fetching data:', error);
       }
     };
+
     fetchData();
   }, [id]);
-
-  // const imageSource = typeof image === 'string' ? { uri: image } : image;
 
   if (!image || !name || !category || !distance || !rating) return null;
 
@@ -280,7 +190,7 @@ const ProductScreen = () => {
     return (
       <View style={{ flexDirection: 'row', alignItems: 'center' }}>
         {stars}
-        <Text style={{ ...styles.rating, fontSize: 12 }}>{formattedRating} (30+)</Text>
+        <Text style={{ ...styles.rating, fontSize: 12 }}>{formattedRating}</Text>
       </View>
     );
   };
@@ -308,14 +218,73 @@ const ProductScreen = () => {
     });
   };
 
-  const imageSource: ImageSourcePropType | undefined = 
+  const imageSource: ImageSourcePropType | undefined =
     Array.isArray(image) ? undefined : typeof image === 'string' ? { uri: image } : image;
 
+  const addToCart = async (foodDetails: Food, selectedSize: string, quantity: number) => {
+    if (quantity < 1) {
+      Alert.alert('Error', 'Quantity must be at least 1', [{ text: 'OK' }]);
+      return;
+    }
+
+    if (!foodDetails || !foodDetails.quantities) {
+      console.error('Invalid food details');
+      return;
+    }
+
+    try {
+      const realItems = await SecureStore.getItemAsync('cart');
+      const arItems = realItems ? JSON.parse(realItems) : [];
+      console.log(JSON.stringify(arItems, null, 2));
+
+      if (arItems.length) {
+        const index = arItems.findIndex((item: any) => item.kterer_id !== foodDetails.kterer_id);
+
+        if (index >= 0 || foodDetails.kterer_id === undefined) {
+          Alert.alert(
+            'Error',
+            'You are allowed to buy food from only one keterer in one session.',
+            [{ text: 'OK' }]
+          );
+          return;
+        }
+      }
+
+      const maxQuantityItem = foodDetails.quantities.find(
+        (quantityItem) => quantityItem.size === selectedSize
+      );
+      const priceItem = foodDetails.quantities.find(
+        (quantityItem) => quantityItem.size === selectedSize
+      );
+
+      const cartItem: CartItem = {
+        id: `${foodDetails.id}-${Date.now()}`,
+        name: foodDetails.name || '',
+        size: selectedSize,
+        quantity,
+        maxQuantity: maxQuantityItem?.quantity || '0',
+        price: priceItem?.price || '0',
+        kterer_id: foodDetails.kterer_id,
+      };
+
+      await addItemToCart(cartItem);
+
+      setCartModalVisible(true);
+      setTimeout(() => {
+        setCartModalVisible(false);
+      }, 1000);
+
+      updateCartCount(cartCount + 1);
+    } catch (error) {
+      console.error('Error adding to cart:', error);
+      Alert.alert('Error', 'Failed to add food to cart.', [{ text: 'OK' }]);
+    }
+  };
 
   return (
     <View style={styles.container}>
       <BackButton onPress={() => router.back()} buttonStyle={styles.backButton} />
-      
+
       <Image source={imageSource} style={styles.image} />
 
       <Modal
@@ -356,11 +325,10 @@ const ProductScreen = () => {
         transparent={true}
         visible={cartModalVisible}
         onRequestClose={() => {
-          Alert.alert('Modal has been closed.');
-          setModalVisible(!modalVisible);
+          setCartModalVisible(false);
         }}
       >
-        <Pressable onPress={() => setCartModalVisible(!cartModalVisible)} style={{ flex: 1, justifyContent: 'flex-end', alignItems: 'center' }}>
+        <Pressable onPress={() => setCartModalVisible(false)} style={{ flex: 1, justifyContent: 'flex-end', alignItems: 'center' }}>
           <View style={styles.cartModalView}>
             <Text style={styles.cartModalText}>Item Added to Cart</Text>
           </View>
@@ -422,15 +390,20 @@ const ProductScreen = () => {
             <View style={styles.sellerSection}>
               <Text style={styles.sellerTitle}>Made By</Text>
               <View style={styles.sellerInfo}>
-                <Image source={require('@assets/images/profile_picture.png')} style={styles.sellerImage} />
+                <Image source={{ uri: ktererProfile?.kterer.profile_image_url }} style={styles.sellerImage} />
                 <View style={styles.sellerDetails}>
-                  <Text style={styles.sellerName}>Bakery</Text>
-                  <Pressable onPress={() => router.navigate({ pathname: '/sellerpage/' })}>
+                  <Text style={styles.sellerName}>{ktererProfile?.kterer.name}</Text>
+                  <Pressable
+                    onPress={() => {
+                      console.log('ktererProfile?.kterer.id', ktererProfile?.kterer.id);
+                      router.push({ pathname: '/sellerpage/', params: { id: ktererProfile?.kterer.id.toString() } });
+                    }}>
                     <Text style={styles.seeMore}>See More Items</Text>
                   </Pressable>
+
                 </View>
                 <View style={styles.sellerRating}>
-                  {renderSellerRating(1)}
+                  {renderSellerRating(ktererProfile?.kterer.rating)}
                 </View>
               </View>
             </View>
@@ -448,7 +421,7 @@ const ProductScreen = () => {
                     isSelected={selectedSize === 'small'}
                     onPress={() => handleSizeSelection('small')}
                   />
-                  <Text style={styles.radioButtonText}>${prod[0]?.quantities.find((item) => item.size === "small")?.price}</Text>
+                  <Text style={styles.radioButtonText}>${prod[0]?.quantities.find((item) => item.size === 'small')?.price}</Text>
                 </View>
                 <View style={styles.row}>
                   <RadioButton
@@ -456,7 +429,7 @@ const ProductScreen = () => {
                     isSelected={selectedSize === 'medium'}
                     onPress={() => handleSizeSelection('medium')}
                   />
-                  <Text style={styles.radioButtonText}>${prod[0]?.quantities.find((item) => item.size === "medium")?.price}</Text>
+                  <Text style={styles.radioButtonText}>${prod[0]?.quantities.find((item) => item.size === 'medium')?.price}</Text>
                 </View>
                 <View style={styles.row}>
                   <RadioButton
@@ -464,7 +437,7 @@ const ProductScreen = () => {
                     isSelected={selectedSize === 'large'}
                     onPress={() => handleSizeSelection('large')}
                   />
-                  <Text style={styles.radioButtonText}>${prod[0]?.quantities.find((item) => item.size === "large")?.price}</Text>
+                  <Text style={styles.radioButtonText}>${prod[0]?.quantities.find((item) => item.size === 'large')?.price}</Text>
                 </View>
               </View>
               <View style={styles.quantityContainer}>
@@ -488,7 +461,7 @@ const ProductScreen = () => {
           </>
         }
         ListFooterComponent={
-          <KBottomButton title="Add to Cart" onPress={() => setCartModalVisible(true)} />
+          <KBottomButton title="Add to Cart" onPress={() => addToCart(prod[0], selectedSize, quantities[selectedSize])} />
         }
         data={undefined}
         renderItem={undefined}

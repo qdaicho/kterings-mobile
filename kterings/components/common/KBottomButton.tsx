@@ -5,7 +5,7 @@ import { View, Text, Pressable, Dimensions, StyleSheet } from 'react-native';
 
 type OnPressProp = () => void;
 
-const KBottomButton: FC<{ onPress: OnPressProp, title?: string, buttonStyle?: object, textStyle?: object }> = ({ onPress, title = 'Add to Cart', buttonStyle = {}, textStyle = {} }) => {
+const KBottomButton: FC<{ onPress: OnPressProp, title?: string, buttonStyle?: object, textStyle?: object, disabled?: boolean }> = ({ onPress, title = 'Add to Cart', buttonStyle = {}, textStyle = {}, disabled = false }) => {
     // Local state to handle press events
     const [isPressed, setIsPressed] = useState(false);
 
@@ -14,6 +14,7 @@ const KBottomButton: FC<{ onPress: OnPressProp, title?: string, buttonStyle?: ob
             onPress={onPress} // Custom press action passed as prop
             onPressIn={() => setIsPressed(true)} // Button is pressed
             onPressOut={() => setIsPressed(false)} // Button is released
+            disabled={disabled} // Enable or disable the button based on the disabled prop
         >
             <View
                 style={[
