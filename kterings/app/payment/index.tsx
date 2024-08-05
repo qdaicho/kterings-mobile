@@ -106,6 +106,8 @@ const Payment = () => {
                     const currentTime = new Date();
                     const diffTime = Math.ceil((dropoffTime.getTime() - currentTime.getTime()) / 60000);
                     setEstimatedDeliveryTime(diffTime);
+
+                    console.log(JSON.stringify(doordashData, null, 2));
                 }
 
                 if (sessionData) {
@@ -142,7 +144,7 @@ const Payment = () => {
         setTotalPrice(calculatedTotalPrice);
     }, [cartItems, deliveryFee]);
 
-    const { initPaymentSheet, presentPaymentSheet } = usePaymentSheet();
+    const { initPaymentSheet, presentPaymentSheet, confirmPaymentSheetPayment } = usePaymentSheet();
 
     const initializePaymentSheet = useCallback(async () => {
         const { error } = await initPaymentSheet({
@@ -168,10 +170,23 @@ const Payment = () => {
         if (error) {
             console.log('Error', error);
         } else {
+            // Payment was confirmed
             if (sessionData?.id) {
                 try {
                     const accessToken = await SecureStore.getItemAsync("token");
                     const apiURL = process.env.EXPO_PUBLIC_API_URL;
+
+                    // Update sessionData to include paymentIntent inside the payment_intent field
+                    const updatedSessionData = {
+                        ...sessionData,
+                        payment_intent: paymentIntent,
+                    };
+
+                    console.log(JSON.stringify(updatedSessionData, null, 2));
+
+                    // console.log('storedData', updatedSessionData);
+
+                    // console.log('productData', productStored);
 
                     const response = await fetch(`${apiURL}/checkoutorder`, {
                         method: "POST",
@@ -180,22 +195,21 @@ const Payment = () => {
                             Authorization: `Bearer ${accessToken}`,
                         },
                         body: JSON.stringify({
-                            storedData: sessionData,
+                            storedData: updatedSessionData,
                             productData: productStored,
                         }),
                     });
 
                     if (!response.ok) {
-                        console.error(`Error: ${response.statusText}`);
+                        console.error(`Error not okay: ${response.statusText} ${response.status} ${response.body}`);
                         return;
                     }
 
                     getUserOrders();
                     getNotifications();
-                } catch (error) {
-                    console.error(`Error: ${error}`);
-                    getUserOrders();
-                    getNotifications();
+                    router.navigate("/homepage");
+                } catch (error: any) {
+                    console.error(`Error: ${error.message}`);
                 }
             } else {
                 getUserOrders();

@@ -8,7 +8,7 @@ import * as SecureStore from 'expo-secure-store';
 
 // Define the Notification interface
 interface Notification {
-  id: number;
+  id: string;
   title: string;
   timestamp: string;
   message: string;
@@ -38,20 +38,53 @@ export default function Notifications() {
           },
         }
       );
-      const data: Notification[] = await response.json();
-      setNotifications(data);
+      const data = await response.json();
 
-      console.log(data);
+      // Map the API response to the expected Notification format
+      const formattedData: Notification[] = data.map((item: any) => ({
+        id: item.id,
+        title: item.type,
+        timestamp: formatTimestamp(new Date(item.created_at)),
+        message: item.data.message,
+        read: item.read_at !== null,
+      }));
+
+      setNotifications(formattedData);
+      console.log(formattedData);
     } catch (error) {
       console.error("Error fetching notifications:", error);
     }
   };
 
-  const handleNotificationClick = async (id: number) => {
+  const formatTimestamp = (date: Date) => {
+    const months = [
+      "January", "February", "March", "April", "May", "June",
+      "July", "August", "September", "October", "November", "December"
+    ];
+
+    const month = months[date.getMonth()];
+    const day = date.getDate();
+    const year = date.getFullYear();
+    let hours = date.getHours();
+    const minutes = date.getMinutes().toString().padStart(2, '0');
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12;
+    hours = hours ? hours : 12; // the hour '0' should be '12'
+
+    return `${month} ${day}, ${year} ${hours}:${minutes} ${ampm}`;
+  };
+
+  const handleNotificationClick = async (id: string) => {
     try {
+      const token = await SecureStore.getItemAsync("token");
+
       await fetch(`${API_URL}/notifications/mark_read/${id}`, {
-        method: 'POST'
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       });
+
       const updatedNotifications = notifications.map(notification =>
         notification.id === id ? { ...notification, read: true } : notification
       );
@@ -75,7 +108,7 @@ export default function Notifications() {
               <View style={{ flexDirection: 'row', justifyContent: 'flex-start', marginBottom: 10, backgroundColor: item.read ? '#f0f0f0' : '#ffffff' }}>
                 <View style={{ width: 3, height: 80, backgroundColor: item.read ? '#CCCCCC' : '#BF1E2E', marginRight: 10 }} />
                 <View style={{ flex: 1, flexDirection: "column", justifyContent: 'flex-start' }}>
-                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <View style={{ flexDirection: 'column', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 5 }}>
                     <Text style={{ fontSize: 14, fontFamily: 'TT Chocolates Trial Bold', color: '#000000' }}>{item.title}</Text>
                     <Text style={{ fontSize: 10, fontFamily: 'TT Chocolates Trial Medium', color: '#969696' }}>{item.timestamp}</Text>
                   </View>

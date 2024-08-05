@@ -129,7 +129,7 @@ export default function Cart() {
 
       const data = await response.json();
       const { url, product_stored, session_data, stripe, doordash, ephemeralKey, customer, publishableKey } = data;
-
+      console.log(session_data);
 
       // await SecureStore.deleteItemAsync("myData");
       await AsyncStorage.removeItem('sessionData');

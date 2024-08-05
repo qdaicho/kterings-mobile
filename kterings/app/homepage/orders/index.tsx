@@ -1,9 +1,64 @@
-import { View, Text, StyleSheet, Image, Pressable } from 'react-native';
-import React from 'react';
+import { View, Text, StyleSheet, Image, Pressable, FlatList, ActivityIndicator } from 'react-native';
+import React, { useEffect, useState } from 'react';
 import BackButton from '@/components/common/BackButton';
 import { router } from 'expo-router';
+import * as SecureStore from 'expo-secure-store';
 
-export default function Orders() { // Changed to PascalCase for React components
+interface OrderItem {
+  name: string;
+  price: number;
+  quantity: number;
+}
+
+interface Order {
+  id: number;
+  kterer_name: string;
+  created_at: string;
+  items: OrderItem[];
+  total_price: number;
+  total_items: number;
+  track_url: string;
+  receipt_url: string;
+  status: string;
+}
+
+const Orders: React.FC = () => {
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchOrders = async () => {
+      try {
+        const accessToken = await SecureStore.getItemAsync("token");
+        const apiURL = process.env.EXPO_PUBLIC_API_URL;
+        const response = await fetch(`${apiURL}/orders`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+          },
+        });
+        const data = await response.json();
+        if (response.ok) {
+          setOrders(data.orders);
+          console.log(JSON.stringify(data.orders, null, 2));
+        } else {
+          console.error(data.message);
+        }
+      } catch (error) {
+        console.error("Failed to fetch orders", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchOrders();
+  }, []);
+
+  if (loading) {
+    return <ActivityIndicator size="large" color="#0000ff" />;
+  }
+
   return (
     <>
       <BackButton
@@ -15,20 +70,40 @@ export default function Orders() { // Changed to PascalCase for React components
           Active Orders
         </Text>
 
-        <ProductRow />
+        
+        <FlatList
+          data={orders}
+          keyExtractor={(item) => item.id.toString()}
+          renderItem={({ item }) => (
+            <ProductRow
+              productName={item.items[0]?.name || 'Unknown'}
+              status={item.status}
+              price={item.total_price}
+            />
+          )}
+          ListEmptyComponent={<Text>No active orders</Text>}
+        />
 
         <Text style={{ fontSize: 20, fontFamily: 'TT Chocolates Trial Bold', color: '#000000', marginTop: 30 }}>
           Past Orders
         </Text>
 
-        <ProductRow status='Delivered on 9 Feb, 10:30' productName='Burger' price={22.98} />
-        <ProductRow status='Delivered on 7 Feb, 06:35' productName='Fries' price={9.99} />
-        <ProductRow status='Delivered on 6 Feb, 06:00' productName='Soda' price={4.99} />
-        <ProductRow status='Delivered on 5 Feb, 10:30' productName='Fries' price={9.99} />
+        <FlatList
+          data={orders}
+          keyExtractor={(item) => item.id.toString()}
+          renderItem={({ item }) => (
+            <ProductRow
+              productName={item.items[0]?.name || 'Unknown'}
+              status={item.status}
+              price={item.total_price}
+            />
+          )}
+          ListEmptyComponent={<Text>No past orders</Text>}
+        />
       </View>
     </>
   );
-}
+};
 
 const styles = StyleSheet.create({
   backButton: {
@@ -81,11 +156,11 @@ const styles = StyleSheet.create({
 });
 
 interface ProductRowProps {
-  imageSource?: string; // Optional parameter for image source
-  productName?: string; // Optional parameter for product name
-  status?: string; // Optional parameter for order status
-  receiptText?: string; // Optional parameter for receipt text
-  price?: number; // Optional parameter for product price
+  imageSource?: string;
+  productName?: string;
+  status?: string;
+  receiptText?: string;
+  price?: number;
 }
 
 const ProductRow: React.FC<ProductRowProps> = ({
@@ -111,3 +186,5 @@ const ProductRow: React.FC<ProductRowProps> = ({
     </View>
   );
 };
+
+export default Orders;
