@@ -139,7 +139,9 @@ const ProductScreen = () => {
           `${process.env.EXPO_PUBLIC_API_URL}/food/reviews/${id}`,
           token
         );
-        setCustomerReviews(userReviews.data);
+        const sortedReviews = userReviews.data.sort((a: { created_at: string | number | Date; }, b: { created_at: string | number | Date; }) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+        setCustomerReviews(sortedReviews);
 
         const ktererProfile = await fetchWithToken(
           `${process.env.EXPO_PUBLIC_API_URL}/kterer/${productData.kterer_id}`,
@@ -263,7 +265,7 @@ const ProductScreen = () => {
         size: selectedSize,
         quantity,
         maxQuantity: maxQuantityItem?.quantity || '0',
-        price: priceItem?.price || '0',
+        price: parseFloat(priceItem?.price || '0'),
         kterer_id: foodDetails.kterer_id,
       };
 
@@ -283,7 +285,7 @@ const ProductScreen = () => {
 
   return (
     <View style={styles.container}>
-      <BackButton onPress={() => router.back()} buttonStyle={styles.backButton} />
+      <BackButton onPress={() => router.navigate("/homepage")} buttonStyle={styles.backButton} />
 
       <Image source={imageSource} style={styles.image} />
 

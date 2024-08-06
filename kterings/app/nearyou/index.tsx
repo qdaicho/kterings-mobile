@@ -115,7 +115,7 @@ export default function Notifications() {
         data={getClosestProducts(prod)}
         keyExtractor={(_, index) => index.toString()}
         renderItem={({ item }) => (
-          <ProductLarge image={item.images[0].image_url} name={item.name} category={item.ethnic_type} distance={`${item.auto_delivery_time} min away`} rating={item.rating} />
+          <ProductLarge image={item.images[0].image_url} name={item.name} category={item.ethnic_type} distance={`${item.auto_delivery_time} min away`} rating={parseFloat(item.rating.toFixed(2))} id={''}/>
         )}
         style={{ marginTop: 10 }}
       />

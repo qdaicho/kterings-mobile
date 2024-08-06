@@ -1,69 +1,181 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, TextInput, TouchableWithoutFeedback, Keyboard, Dimensions } from 'react-native';
-import { Feather, FontAwesome, FontAwesome5 } from '@expo/vector-icons';
+import { View, Text, StyleSheet, ScrollView, Pressable, TextInput, TouchableWithoutFeedback, Keyboard, Image, Alert } from 'react-native';
+import { FontAwesome, Feather } from '@expo/vector-icons';
 import BackButton from '@/components/common/BackButton';
 import { router } from 'expo-router';
-import { Entypo } from '@expo/vector-icons';
 import KBottomButton from '@/components/common/KBottomButton';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
+import * as ImagePicker from 'expo-image-picker';
+import { Order } from '@/hooks/types';
+import axios from 'axios';
 
 export default function Index() {
-    // Sample cart data
-    const sampleCart: any[] = [
-        {
-            id: 1,
-            title: 'Fluffy Pancakes',
-            notes: 'Extra maple syrup',
-            price: 12.99,
-            quantity: 2,
-            image: require('@assets/images/products/pancakes.jpeg'),
-        },
-        {
-            id: 2,
-            title: 'Chicken Biryani',
-            notes: 'Extra onion',
-            price: 5.99,
-            quantity: 1,
-            image: require('@assets/images/products/chicken_biryani.jpg'),
-        },
-        {
-            id: 3,
-            title: 'Roasted Chicken',
-            notes: 'Extra cheese',
-            price: 8.99,
-            quantity: 3,
-            image: require('@assets/images/products/chicken_biryani.jpg'),
-        },
-        {
-            id: 4,
-            title: 'Fried Rice',
-            notes: 'Extra chicken',
-            price: 7.99,
-            quantity: 1,
-        },
-    ];
+    const [cart, setCart] = useState<any[]>([]);
+    const [currentOrder, setCurrentOrder] = useState<Order | null>(null);
+    const [selectedImages, setSelectedImages] = useState<string[]>([]);
+    const [rating, setRating] = useState<number>(0);
+    const [reviewText, setReviewText] = useState<string>('');
 
-    // Initializing the cart with a 'rating' field for each item
-    const [cart, setCart] = useState(
-        sampleCart.map((item) => ({
-            ...item,
-            rating: 0, // Default rating for each item
-        }))
-    );
+    const fetchFoodImage = async (foodId: string) => {
+        try {
+            const accessToken = await SecureStore.getItemAsync("token");
+            const apiURL = process.env.EXPO_PUBLIC_API_URL;
+            const response = await fetch(`${apiURL}/food/${foodId}`, {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${accessToken}`,
+                },
+            });
+            const data = await response.json();
+            if (response.ok && data.data.images.length > 0) {
+                return data.data.images[0].image_url;
+            } else {
+                console.error("Failed to fetch food image");
+                return null;
+            }
+        } catch (error) {
+            console.error("Failed to fetch food image", error);
+            return null;
+        }
+    };
+
+    useEffect(() => {
+        const loadCurrentOrder = async () => {
+            try {
+                const storedOrder = await AsyncStorage.getItem('current_order');
+                if (storedOrder) {
+                    const parsedOrder = JSON.parse(storedOrder);
+                    setCurrentOrder(parsedOrder);
+
+                    // Fetch images for each item in the order
+                    const cartWithImages = await Promise.all(parsedOrder.items.map(async (item: any) => {
+                        const imageUrl = await fetchFoodImage(item.food_id);
+                        return { ...item, image: imageUrl ? { uri: imageUrl } : require('@assets/images/products/lasagna.jpg') };
+                    }));
+                    setCart(cartWithImages);
+                }
+            } catch (error) {
+                console.error('Failed to load current order', error);
+            }
+        };
+        loadCurrentOrder();
+    }, []);
 
     const setStarRating = (itemId: number, index: number) => {
-        // Update the rating for the specific item
+        setRating(index + 1); // Update the overall rating
         setCart((prevCart) =>
             prevCart.map((item) =>
                 item.id === itemId ? { ...item, rating: index + 1 } : item // Add 1 because index is 0-based
             )
         );
     };
-    const [isPostPressed, setIsPostPressed] = useState(false); // State to track if the button is pressed
+
+    const askPermissionsAsync = async () => {
+        const { status: cameraStatus } = await ImagePicker.requestCameraPermissionsAsync();
+        const { status: cameraRollStatus } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (cameraStatus !== 'granted' || cameraRollStatus !== 'granted') {
+            Alert.alert('Permission to access camera and photos is required!');
+            return false;
+        }
+        return true;
+    };
+
+    const pickImage = async () => {
+        const hasPermission = await askPermissionsAsync();
+        if (!hasPermission) return;
+
+        if (selectedImages.length >= 3) {
+            Alert.alert('You can only select up to 3 images');
+            return;
+        }
+        let result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ImagePicker.MediaTypeOptions.Images,
+            allowsEditing: true,
+            quality: 1,
+        });
+        if (!result.canceled && result.assets && result.assets.length > 0) {
+            setSelectedImages([...selectedImages, result.assets[0].uri]);
+        }
+    };
+
+    const takePhoto = async () => {
+        const hasPermission = await askPermissionsAsync();
+        if (!hasPermission) return;
+
+        if (selectedImages.length >= 3) {
+            Alert.alert('You can only select up to 3 images');
+            return;
+        }
+        let result = await ImagePicker.launchCameraAsync({
+            allowsEditing: true,
+            quality: 1,
+        });
+        if (!result.canceled && result.assets && result.assets.length > 0) {
+            setSelectedImages([...selectedImages, result.assets[0].uri]);
+        }
+    };
+
+    const removeImage = (uri: string) => {
+        setSelectedImages(selectedImages.filter(imageUri => imageUri !== uri));
+    };
+
+    const postReview = async (foodItemId: string) => {
+        const accessToken = await SecureStore.getItemAsync("token");
+        const formData = new FormData();
+        formData.append('rating', rating.toString());
+        formData.append('review', reviewText);
+
+        selectedImages.forEach(async (uri, index) => {
+            const response = await fetch(uri);
+            const blob = await response.blob();
+            const file = new File([blob], `photo_${index}.jpg`, { type: 'image/jpeg' });
+            formData.append('images[]', file, file.name);
+        });
+
+        try {
+            const response = await axios.post(
+                `${process.env.EXPO_PUBLIC_API_URL}/review/food/${foodItemId}`,
+                formData,
+                {
+                    headers: {
+                        'Content-Type': 'multipart/form-data',
+                        Authorization: `Bearer ${accessToken}`
+                    }
+                }
+            );
+
+            if (response.status === 200) {
+                Alert.alert('Review posted successfully!');
+                setReviewText('');
+                setSelectedImages([]);
+                setRating(0);
+            } else {
+                Alert.alert('Failed to post review. Please try again.');
+            }
+        } catch (error) {
+            console.error('Failed to post review', error);
+            Alert.alert('Failed to post review. Please try again.');
+        }
+    };
+
+    const handlePostReview = () => {
+        if (!currentOrder) return;
+
+        const uniqueFoodIds = new Set();
+
+        cart.forEach((item) => {
+            if (!uniqueFoodIds.has(item.food_id)) {
+                uniqueFoodIds.add(item.food_id);
+                postReview(item.food_id);
+            }
+        });
+    };
+
 
     return (
         <>
-
-
             <BackButton
                 onPress={() => router.navigate("/receipts/")}
                 buttonStyle={styles.backButton}
@@ -73,78 +185,78 @@ export default function Index() {
                     Help
                 </Text>
                 <ScrollView style={{ maxHeight: 400 }}>
-                    {cart.map((item) => (
-                        <View key={item.id}>
-                            <Text style={{ fontSize: 14, fontFamily: 'TT Chocolates Trial Bold', color: '#000000', marginTop: 30 }}>
-                                {item.title}
-                            </Text>
-                            <View style={{ marginTop: 10, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-                                <Text style={{ fontSize: 14, fontFamily: 'TT Chocolates Trial Medium', color: '#000000' }}>Give a Rating</Text>
-                                <View style={styles.starContainer}>
-                                    {Array.from({ length: 5 }, (_, index) => (
-                                        <Pressable key={index} onPress={() => setStarRating(item.id, index)}>
-                                            <FontAwesome
-                                                name={index < item.rating ? 'star' : 'star-o'} // If the star is before or at the rating, fill it
-                                                size={20}
-                                                color="#FFBF00" // Yellow color for filled stars
-                                                style={styles.star}
-                                            />
-                                        </Pressable>
-                                    ))}
+                    {Array.from(new Set(cart.map(item => item.food_id)))
+                        .map(uniqueFoodId => cart.find(item => item.food_id === uniqueFoodId))
+                        .map(item => (
+                            <View key={item.id}>
+                                <Text style={{ fontSize: 14, fontFamily: 'TT Chocolates Trial Bold', color: '#000000', marginTop: 30 }}>
+                                    {item.name}
+                                </Text>
+                                <View style={{ marginTop: 10, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+                                    <Text style={{ fontSize: 14, fontFamily: 'TT Chocolates Trial Medium', color: '#000000' }}>Give a Rating</Text>
+                                    <View style={styles.starContainer}>
+                                        {Array.from({ length: 5 }, (_, index) => (
+                                            <Pressable key={index} onPress={() => setStarRating(item.id, index)}>
+                                                <FontAwesome
+                                                    name={index < item.rating ? 'star' : 'star-o'} // If the star is before or at the rating, fill it
+                                                    size={20}
+                                                    color="#FFBF00" // Yellow color for filled stars
+                                                    style={styles.star}
+                                                />
+                                            </Pressable>
+                                        ))}
+                                    </View>
                                 </View>
+                                <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
+                                    <TextInput
+                                        style={[styles.rectangle, { marginTop: 20, height: 100, alignItems: 'flex-start', padding: 10, textAlign: 'justify', fontFamily: 'TT Chocolates Trial Regular' }]}
+                                        placeholder="How was the food and service? Let us know!"
+                                        multiline={true}
+                                        placeholderTextColor={'#DFDFDF'}
+                                        value={reviewText}
+                                        onChangeText={setReviewText}
+                                    />
+                                </TouchableWithoutFeedback>
                             </View>
-                            <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
-                                <TextInput
-                                    style={[styles.rectangle, { marginTop: 20, height: 100, alignItems: 'flex-start', padding: 10, textAlign: 'justify', fontFamily: 'TT Chocolates Trial Regular' }]}
-                                    // onChangeText={onChangeText}
-                                    // value={text}
-                                    placeholder="How was the food and service? Let us know!"
-                                    multiline={true}
-                                    placeholderTextColor={'#DFDFDF'}
-
-                                />
-                            </TouchableWithoutFeedback>
-                        </View>
-                    ))}
+                        ))
+                    }
                 </ScrollView>
 
                 <View style={{ marginTop: 10, flexDirection: 'column', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                     <Text style={{ fontSize: 14, fontFamily: 'TT Chocolates Trial Bold', color: '#000000' }}>Upload Photos</Text>
-                    <Text style={{ fontSize: 12, fontFamily: 'TT Chocolates Trial Regular', color: '#000000', marginTop: 10 }}>You may choose up to 3 photos.</Text>
+                    <Text style={{ fontSize: 12, fontFamily: 'TT Chocolates Trial Regular', color: '#000000', marginTop: 10 }}>You may choose up to 3 photos. Long press Image to remove.</Text>
                 </View>
-
                 <View style={styles.container}>
                     <Pressable
                         style={({ pressed }) => [
                             styles.rectangle2,
                             pressed && styles.pressed, // Apply style when pressed
                         ]}
+                        onPress={pickImage}
                     >
                         <FontAwesome name="image" size={24} color="black" />
                         <Text style={styles.text}>From Photos</Text>
                     </Pressable>
-
                     <Pressable
                         style={({ pressed }) => [
                             styles.rectangle2,
                             pressed && styles.pressed, // Apply style when pressed
                         ]}
+                        onPress={takePhoto}
                     >
                         <Feather name="camera" size={24} color="black" />
                         <Text style={styles.text}>From Camera</Text>
                     </Pressable>
                 </View>
-
-                <View style={{ marginTop: 50, flexDirection: 'row', justifyContent: 'space-around', alignItems: 'flex-start' }}>
-                    <Entypo name="plus" size={40} color="#969696" />
-                    <Entypo name="plus" size={40} color="#969696" />
-                    <Entypo name="plus" size={40} color="#969696" />
+                <View style={{ marginTop: 20, flexDirection: 'row', justifyContent: 'space-between', }}>
+                    {selectedImages.map((uri, index) => (
+                        <Pressable key={index} onLongPress={() => removeImage(uri)}>
+                            <Image source={{ uri }} style={styles.image} />
+                        </Pressable>
+                    ))}
                 </View>
-
-
             </View>
-            <KBottomButton title="Post Review" onPress={() => { console.log("proceed to payment"); }}  />
-
+            <KBottomButton title="Post Review" onPress={handlePostReview} />
         </>
     );
 }
@@ -174,17 +286,12 @@ const styles = StyleSheet.create({
         borderColor: '#EEEEEE', // Border color
         borderRadius: 6, // Border radius in pixels
         backgroundColor: '#FFFFFF', // Background color
-        // Box-shadow properties for iOS
         shadowColor: 'rgba(216, 216, 216, 0.5)', // Shadow color
         shadowOffset: { width: 0, height: 2 }, // Shadow offset for horizontal and vertical
-        // shadowOpacity: 1, // Shadow opacity
-        // shadowRadius: 4, // Shadow radius
-        // Elevation property for Android
         elevation: 3, // Provides shadow on Android,
         flexDirection: 'row',
         padding: 10,
         alignItems: 'flex-start',
-
     },
     container: {
         marginTop: 40,
@@ -207,5 +314,11 @@ const styles = StyleSheet.create({
     },
     textPressed: {
         color: '#969696', // Text color when pressed
+    },
+    image: {
+        width: 50,
+        height: 50,
+        borderRadius: 10,
+        marginRight: 10,
     },
 });

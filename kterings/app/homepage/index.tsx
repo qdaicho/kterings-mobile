@@ -23,7 +23,7 @@ import RBSheet from 'react-native-raw-bottom-sheet';
 import KButton from '@/components/common/KButton';
 import OnboardingComponent from '@/components/screens/Onboarding';
 import * as SecureStore from 'expo-secure-store';
-import {Food, Quantity, qImage} from '@/hooks/types';
+import { Food, Quantity, qImage } from '@/hooks/types';
 
 
 
@@ -314,8 +314,14 @@ export default function App() {
                                         data={closestProd}
                                         keyExtractor={(_, index) => index.toString()}
                                         renderItem={({ item }) => (
-                                            <Product image={item.images[0].image_url} name={item.name} category={item.ethnic_type} distance={`${item.auto_delivery_time} min away`} rating={item.rating} id={item.id} />
-                                        )}
+                                            <Product
+                                                image={item.images[0].image_url}
+                                                name={item.name}
+                                                category={item.ethnic_type}
+                                                distance={`${item.auto_delivery_time} min away`}
+                                                rating={parseFloat(item.rating.toFixed(2))}
+                                                id={item.id}
+                                            />)}
                                         horizontal
                                         style={{ marginTop: 10 }}
                                     />
@@ -375,7 +381,8 @@ export default function App() {
                                         data={allItemsProd}
                                         keyExtractor={(_, index) => index.toString()}
                                         renderItem={({ item }) => (
-                                            <ProductLarge image={item.images[0].image_url} name={item.name} category={item.ethnic_type} distance={`${item.auto_delivery_time} min away`} rating={item.rating} id={item.id} />
+                                            <ProductLarge image={item.images[0].image_url} name={item.name} category={item.ethnic_type} distance={`${item.auto_delivery_time} min away`} rating={parseFloat(item.rating.toFixed(2))}
+                                                id={item.id} />
                                         )}
                                         style={{ marginTop: 10 }}
                                     />

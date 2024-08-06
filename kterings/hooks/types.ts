@@ -1,3 +1,22 @@
+export interface OrderItem {
+  name: string;
+  price: number;
+  quantity: number;
+  order_id: string;
+  food_id: string;
+}
+
+export interface Order {
+  id: number;
+  kterer_name: string;
+  created_at: string;
+  items: OrderItem[];
+  total_price: number;
+  total_items: number;
+  track_url: string;
+  receipt_url: string;
+  status: string;
+}
 interface AmountDetails {
   tip: any[];
 }
@@ -296,6 +315,8 @@ export interface Food {
   quantities: Quantity[];
   rating: number;
 }
+
+
 
 export interface User {
   id: number;
