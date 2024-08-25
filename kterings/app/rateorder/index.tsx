@@ -7,15 +7,36 @@ import KBottomButton from '@/components/common/KBottomButton';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
 import * as ImagePicker from 'expo-image-picker';
-import { Order } from '@/hooks/types';
 import axios from 'axios';
+import * as FileSystem from 'expo-file-system';
 
 export default function Index() {
     const [cart, setCart] = useState<any[]>([]);
-    const [currentOrder, setCurrentOrder] = useState<Order | null>(null);
+    const [currentOrder, setCurrentOrder] = useState<any | null>(null);
     const [selectedImages, setSelectedImages] = useState<string[]>([]);
     const [rating, setRating] = useState<number>(0);
     const [reviewText, setReviewText] = useState<string>('');
+
+    useEffect(() => {
+        const loadCurrentOrder = async () => {
+            try {
+                const storedOrder = await AsyncStorage.getItem('current_order');
+                if (storedOrder) {
+                    const parsedOrder = JSON.parse(storedOrder);
+                    setCurrentOrder(parsedOrder);
+
+                    const cartWithImages = await Promise.all(parsedOrder.items.map(async (item: any) => {
+                        const imageUrl = await fetchFoodImage(item.food_id);
+                        return { ...item, image: imageUrl ? { uri: imageUrl } : require('@assets/images/products/lasagna.jpg') };
+                    }));
+                    setCart(cartWithImages);
+                }
+            } catch (error) {
+                console.error('Failed to load current order', error);
+            }
+        };
+        loadCurrentOrder();
+    }, []);
 
     const fetchFoodImage = async (foodId: string) => {
         try {
@@ -41,33 +62,11 @@ export default function Index() {
         }
     };
 
-    useEffect(() => {
-        const loadCurrentOrder = async () => {
-            try {
-                const storedOrder = await AsyncStorage.getItem('current_order');
-                if (storedOrder) {
-                    const parsedOrder = JSON.parse(storedOrder);
-                    setCurrentOrder(parsedOrder);
-
-                    // Fetch images for each item in the order
-                    const cartWithImages = await Promise.all(parsedOrder.items.map(async (item: any) => {
-                        const imageUrl = await fetchFoodImage(item.food_id);
-                        return { ...item, image: imageUrl ? { uri: imageUrl } : require('@assets/images/products/lasagna.jpg') };
-                    }));
-                    setCart(cartWithImages);
-                }
-            } catch (error) {
-                console.error('Failed to load current order', error);
-            }
-        };
-        loadCurrentOrder();
-    }, []);
-
     const setStarRating = (itemId: number, index: number) => {
-        setRating(index + 1); // Update the overall rating
+        setRating(index + 1);
         setCart((prevCart) =>
             prevCart.map((item) =>
-                item.id === itemId ? { ...item, rating: index + 1 } : item // Add 1 because index is 0-based
+                item.id === itemId ? { ...item, rating: index + 1 } : item
             )
         );
     };
@@ -93,7 +92,7 @@ export default function Index() {
         let result = await ImagePicker.launchImageLibraryAsync({
             mediaTypes: ImagePicker.MediaTypeOptions.Images,
             allowsEditing: true,
-            quality: 1,
+            quality: 0.2,
         });
         if (!result.canceled && result.assets && result.assets.length > 0) {
             setSelectedImages([...selectedImages, result.assets[0].uri]);
@@ -122,43 +121,96 @@ export default function Index() {
     };
 
     const postReview = async (foodItemId: string) => {
-        const accessToken = await SecureStore.getItemAsync("token");
-        const formData = new FormData();
-        formData.append('rating', rating.toString());
-        formData.append('review', reviewText);
-
-        selectedImages.forEach(async (uri, index) => {
-            const response = await fetch(uri);
-            const blob = await response.blob();
-            const file = new File([blob], `photo_${index}.jpg`, { type: 'image/jpeg' });
-            formData.append('images[]', file, file.name);
-        });
-
         try {
-            const response = await axios.post(
-                `${process.env.EXPO_PUBLIC_API_URL}/review/food/${foodItemId}`,
-                formData,
-                {
-                    headers: {
-                        'Content-Type': 'multipart/form-data',
-                        Authorization: `Bearer ${accessToken}`
+            const accessToken = await SecureStore.getItemAsync("token");
+            if (!accessToken) {
+                Alert.alert("Authorization Error", "Access token is missing.");
+                return;
+            }
+    
+            const formData = new FormData();
+    
+            // Append rating and review text to FormData
+            formData.append('rating', rating.toString());
+            formData.append('review', reviewText);
+    
+            // Process and append each selected image to FormData
+            for (const [index, uri] of selectedImages.entries()) {
+                try {
+                    // Get file info from the local file system
+                    const fileInfo = await FileSystem.getInfoAsync(uri);
+    
+                    // Ensure the file exists and has a size greater than 0
+                    if (fileInfo.exists && fileInfo.size > 0) {
+                        // Get the blob and additional image metadata
+                        const response = await fetch(uri);
+                        const blob = await response.blob();
+    
+                        // Extract filename and type (if available)
+                        const fileName = uri.split('/').pop() || `photo_${index + 1}.jpg`;
+                        const fileType = blob.type || 'image/jpeg';
+    
+                        // Log for debugging
+                        console.log(`Uploading image: ${fileName}, type: ${fileType}, size: ${fileInfo.size}`);
+    
+                        // Append the image metadata to FormData
+                        formData.append(`image_${index + 1}`, {
+                            uri,
+                            type: fileType,
+                            name: fileName,
+                        });
+                    } else {
+                        console.error(`File not found or empty: ${uri}`);
+                        Alert.alert('Error', `One of the images could not be found or is empty.`);
+                        return;
                     }
+                } catch (error) {
+                    console.error('Error processing file:', error);
+                    Alert.alert('Error', 'Failed to process one of the images.');
+                    return;
+                }
+            }
+    
+            // Append the "_method" field for the form submission
+            formData.append("_method", "POST");
+    
+            // Send the review with the images to the server using fetch API
+            const response = await fetch(
+                `${process.env.EXPO_PUBLIC_API_URL}/review/food/${foodItemId}`,
+                {
+                    method: 'POST',
+                    headers: {
+                        Authorization: `Bearer ${accessToken}`,
+                    },
+                    body: formData,
                 }
             );
-
-            if (response.status === 200) {
+    
+            // Handle the response
+            if (response.ok) {
                 Alert.alert('Review posted successfully!');
                 setReviewText('');
                 setSelectedImages([]);
                 setRating(0);
             } else {
-                Alert.alert('Failed to post review. Please try again.');
+                const errorData = await response.json();
+                console.error(`Error ${response.status}: ${errorData.message}`);
+                Alert.alert('Failed to post review', errorData.message);
             }
         } catch (error) {
-            console.error('Failed to post review', error);
+            console.error('Failed to post review:', error);
             Alert.alert('Failed to post review. Please try again.');
         }
     };
+    
+
+
+
+
+
+
+
+
 
     const handlePostReview = () => {
         if (!currentOrder) return;
@@ -173,7 +225,6 @@ export default function Index() {
         });
     };
 
-
     return (
         <>
             <BackButton
@@ -187,8 +238,8 @@ export default function Index() {
                 <ScrollView style={{ maxHeight: 400 }}>
                     {Array.from(new Set(cart.map(item => item.food_id)))
                         .map(uniqueFoodId => cart.find(item => item.food_id === uniqueFoodId))
-                        .map(item => (
-                            <View key={item.id}>
+                        .map((item, index) => (
+                            <View key={`${item.food_id}_${index}`}>
                                 <Text style={{ fontSize: 14, fontFamily: 'TT Chocolates Trial Bold', color: '#000000', marginTop: 30 }}>
                                     {item.name}
                                 </Text>
@@ -198,9 +249,9 @@ export default function Index() {
                                         {Array.from({ length: 5 }, (_, index) => (
                                             <Pressable key={index} onPress={() => setStarRating(item.id, index)}>
                                                 <FontAwesome
-                                                    name={index < item.rating ? 'star' : 'star-o'} // If the star is before or at the rating, fill it
+                                                    name={index < item.rating ? 'star' : 'star-o'}
                                                     size={20}
-                                                    color="#FFBF00" // Yellow color for filled stars
+                                                    color="#FFBF00"
                                                     style={styles.star}
                                                 />
                                             </Pressable>
@@ -221,7 +272,6 @@ export default function Index() {
                         ))
                     }
                 </ScrollView>
-
                 <View style={{ marginTop: 10, flexDirection: 'column', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                     <Text style={{ fontSize: 14, fontFamily: 'TT Chocolates Trial Bold', color: '#000000' }}>Upload Photos</Text>
                     <Text style={{ fontSize: 12, fontFamily: 'TT Chocolates Trial Regular', color: '#000000', marginTop: 10 }}>You may choose up to 3 photos. Long press Image to remove.</Text>
@@ -230,7 +280,7 @@ export default function Index() {
                     <Pressable
                         style={({ pressed }) => [
                             styles.rectangle2,
-                            pressed && styles.pressed, // Apply style when pressed
+                            pressed && styles.pressed,
                         ]}
                         onPress={pickImage}
                     >
@@ -240,7 +290,7 @@ export default function Index() {
                     <Pressable
                         style={({ pressed }) => [
                             styles.rectangle2,
-                            pressed && styles.pressed, // Apply style when pressed
+                            pressed && styles.pressed,
                         ]}
                         onPress={takePhoto}
                     >
@@ -274,21 +324,21 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     star: {
-        marginHorizontal: 4, // Space between stars
+        marginHorizontal: 4,
     },
     rectangle: {
-        borderWidth: 1, // Equivalent to 'border: 1px solid #DFDFDF'
-        borderColor: '#DFDFDF', // Border color
-        borderRadius: 3, // Border radius in pixels
+        borderWidth: 1,
+        borderColor: '#DFDFDF',
+        borderRadius: 3,
     },
     rectangle2: {
-        borderWidth: 1, // Equivalent to 'border: 1px solid #EEEEEE'
-        borderColor: '#EEEEEE', // Border color
-        borderRadius: 6, // Border radius in pixels
-        backgroundColor: '#FFFFFF', // Background color
-        shadowColor: 'rgba(216, 216, 216, 0.5)', // Shadow color
-        shadowOffset: { width: 0, height: 2 }, // Shadow offset for horizontal and vertical
-        elevation: 3, // Provides shadow on Android,
+        borderWidth: 1,
+        borderColor: '#EEEEEE',
+        borderRadius: 6,
+        backgroundColor: '#FFFFFF',
+        shadowColor: 'rgba(216, 216, 216, 0.5)',
+        shadowOffset: { width: 0, height: 2 },
+        elevation: 3,
         flexDirection: 'row',
         padding: 10,
         alignItems: 'flex-start',
@@ -300,7 +350,7 @@ const styles = StyleSheet.create({
         alignItems: 'flex-start',
     },
     pressed: {
-        backgroundColor: '#EFEFF0', // Change color on press
+        backgroundColor: '#EFEFF0',
     },
     text: {
         fontSize: 12,
@@ -308,12 +358,6 @@ const styles = StyleSheet.create({
         color: '#000000',
         marginTop: 10,
         marginLeft: 10,
-    },
-    buttonPressed: {
-        backgroundColor: '#EFEFF0', // Color when pressed
-    },
-    textPressed: {
-        color: '#969696', // Text color when pressed
     },
     image: {
         width: 50,

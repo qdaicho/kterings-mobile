@@ -120,7 +120,7 @@ export default function index() {
                     <FlatList
                         style={{ maxHeight: 200, marginTop: 20 }}
                         data={cart}
-                        keyExtractor={(item) => item.order_id.toString()}
+                        keyExtractor={(item, index) => `${item.order_id}_${index}`}  // Ensure unique keys
                         renderItem={({ item }) => (
                             <View style={{}}>
                                 <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'flex-start', marginBottom: 20, alignItems: 'center' }}>
@@ -134,6 +134,7 @@ export default function index() {
                             </View>
                         )}
                     />
+
 
                     <Text style={{ fontSize: 16, fontFamily: 'TT Chocolates Trial Bold', color: '#000000', alignItems: 'flex-start', marginTop: 20 }}>Delivered to</Text>
 

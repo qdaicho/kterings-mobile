@@ -8,30 +8,27 @@ import BackButton from '@/components/common/BackButton';
 import { router } from 'expo-router';
 import KAddButton from '@/components/common/KAddButton';
 import { GestureHandlerRootView, Swipeable } from 'react-native-gesture-handler';
+import {User, AddressResponse, Address} from '@/hooks/types';
+// interface Address {
+//   address: string;
+//   created_at: string;
+//   deleted_at: string | null;
+//   id: string;
+//   type: string;
+//   updated_at: string;
+//   user_id: number;
+// }
 
-interface Address {
-  address: string;
-  created_at: string;
-  deleted_at: string | null;
-  id: string;
-  type: string;
-  updated_at: string;
-  user_id: number;
-}
 
-interface AddressResponse {
-  home: Address;
-  work: Address;
-}
 
-type User = {
-  first_name: string;
-  last_name: string;
-  phone: string;
-  email: string;
-  country: string;
-  profile_image_url: string;
-};
+// type User = {
+//   first_name: string;
+//   last_name: string;
+//   phone: string;
+//   email: string;
+//   country: string;
+//   profile_image_url: string;
+// };
 
 const Account: React.FC = () => {
   const [modalVisible, setModalVisible] = useState(false);
@@ -70,6 +67,7 @@ const Account: React.FC = () => {
 
       const data = await response.json();
       setUserDetails(data.user);
+      console.log(data.user);
       setForm({
         first_name: data.user.first_name,
         last_name: data.user.last_name,
@@ -260,12 +258,7 @@ const Account: React.FC = () => {
           </View>
 
           <View style={styles.imageContainer}>
-            <Pressable
-              style={({ pressed }) => [styles.imageWrapper, { backgroundColor: pressed ? '#EFEFF0' : 'transparent' }]}
-              onPress={pickImage}
-            >
-              <Image source={{ uri: image || userDetails?.profile_image_url }} style={styles.image} />
-            </Pressable>
+            
             {userDetails && !editMode && (
               <View style={styles.detailsContainer}>
                 <Text style={styles.detailsText}>{userDetails.first_name} {userDetails.last_name}</Text>
@@ -414,7 +407,7 @@ const styles = StyleSheet.create({
   imageContainer: {
     marginTop: 30,
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
     alignItems: 'center',
   },
   imageWrapper: {
@@ -432,6 +425,7 @@ const styles = StyleSheet.create({
   detailsContainer: {
     flexDirection: 'column',
     justifyContent: 'space-between',
+    alignItems: 'center',
   },
   detailsText: {
     fontSize: 14,

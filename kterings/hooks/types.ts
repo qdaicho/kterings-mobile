@@ -17,6 +17,27 @@ export interface Order {
   receipt_url: string;
   status: string;
 }
+
+export interface KOrderItem {
+  name: string;
+  price: number;
+  quantity: number;
+}
+
+export interface KOrder {
+  id: number;
+  uuid: string;
+  buyer_name: string;
+  created_at: string;
+  items: OrderItem[];
+  payment_id: string | null;
+  receipt_url: string | null;
+  status: string;
+  total_price: number;
+  total_items: number;
+  track_url: string | null;
+}
+
 interface AmountDetails {
   tip: any[];
 }
@@ -99,7 +120,6 @@ export interface PaymentIntent {
   transfer_data: any | null;
   transfer_group: any | null;
 }
-
 
 export interface DoorDashResponse {
   statusCode: number;
@@ -273,6 +293,10 @@ export interface Address {
   updated_at: string;
   user_id: number;
 }
+export interface AddressResponse {
+  home: Address;
+  work: Address;
+}
 
 export interface qImage {
   id: string;
@@ -316,8 +340,6 @@ export interface Food {
   rating: number;
 }
 
-
-
 export interface User {
   id: number;
   client_id: string;
@@ -333,6 +355,14 @@ export interface User {
   updated_at: string;
   deleted_at: string | null;
 }
+
+export interface EarningsResponse {
+  balance: {
+    available: Array<{ amount: number }>;
+    pending: Array<{ amount: number }>;
+  };
+}
+
 
 export interface Kterer {
   id: number;
@@ -357,7 +387,14 @@ export interface Review {
   rating: number;
   review: string;
   created_at: string;
-  images: string[];
+  images: {
+    id: string;
+    food_review_id: string;
+    image_url: string;
+    created_at: string;
+    updated_at: string;
+    deleted_at: string | null;
+  }[];
 }
 
 export interface KtererProfile {

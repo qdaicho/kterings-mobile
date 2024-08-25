@@ -9,6 +9,7 @@ import {
   Alert,
   FlatList,
   ImageSourcePropType,
+  ScrollView,
 } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -139,8 +140,11 @@ const ProductScreen = () => {
           `${process.env.EXPO_PUBLIC_API_URL}/food/reviews/${id}`,
           token
         );
-        const sortedReviews = userReviews.data.sort((a: { created_at: string | number | Date; }, b: { created_at: string | number | Date; }) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+        const sortedReviews = userReviews.data
+          // .filter((review: Review) => review.user.first_name === 'Daian' && review.user.last_name === 'Chowdhury')
+          .sort((a: { created_at: string | number | Date; }, b: { created_at: string | number | Date; }) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
+        console.log(JSON.stringify(sortedReviews, null, 2));
         setCustomerReviews(sortedReviews);
 
         const ktererProfile = await fetchWithToken(
@@ -298,20 +302,73 @@ const ProductScreen = () => {
           setModalVisible(!modalVisible);
         }}
       >
-        <View style={styles.centeredView}>
-          <View style={styles.modalView}>
-            <Image
-              source={require('@assets/images/profile_picture.png')}
-              style={{ width: 300, height: 200, borderRadius: 5 }}
-            />
-            <Text style={{ ...styles.modalText, width: 300, textAlign: 'center', padding: 10 }}>
+        <View
+          style={{
+            flex: 1,
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}
+        >
+          <View
+            style={{
+              margin: 20,
+              backgroundColor: '#FFFFFF',
+              borderRadius: 20,
+              padding: 10,
+              alignItems: 'center',
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.25,
+              shadowRadius: 4,
+              elevation: 5,
+              width: '80%',
+            }}
+          >
+            <ScrollView
+              horizontal
+              pagingEnabled
+              contentContainerStyle={{ alignItems: 'center', justifyContent: 'center' }}
+              style={{ maxHeight: 300, width: '100%' }}
+            >
+              {selectedUserReview?.images?.map((img, index) => (
+                <Image
+                  key={index}
+                  source={{ uri: img.image_url }}
+                  style={{ width: 300, height: 200, borderRadius: 5 }}
+                  resizeMode="contain"
+                />
+              ))}
+            </ScrollView>
+
+            <Text
+              style={{ ...styles.modalText, width: 300, textAlign: 'center', padding: 10 }}
+            >
               {selectedUserReview?.review}
             </Text>
-            <Text style={{ fontFamily: 'TT Chocolates Trial Bold', fontSize: 14, marginBottom: 10 }}>
+
+            <Text
+              style={{
+                fontFamily: 'TT Chocolates Trial Bold',
+                fontSize: 16,
+                marginBottom: 10,
+              }}
+            >
               {selectedUserReview?.user.first_name} {selectedUserReview?.user.last_name}
             </Text>
-            <View style={{ marginBottom: 10 }}>{renderUserRating(selectedUserReview?.rating, 14)}</View>
-            <View style={{ height: 0.5, backgroundColor: '#969696', marginBottom: 10, width: 300 }}></View>
+
+            <View style={{ marginBottom: 10 }}>
+              {renderUserRating(selectedUserReview?.rating, 14)}
+            </View>
+
+            <View
+              style={{
+                height: 0.5,
+                backgroundColor: '#969696',
+                marginBottom: 10,
+                width: 300,
+              }}
+            ></View>
+
             <Pressable
               style={[styles.button]}
               onPress={() => setModalVisible(!modalVisible)}
@@ -321,6 +378,7 @@ const ProductScreen = () => {
           </View>
         </View>
       </Modal>
+
 
       <Modal
         animationType="slide"
@@ -372,7 +430,10 @@ const ProductScreen = () => {
                 renderItem={({ item }) => (
                   <Pressable onPress={() => { setModalVisible(true); setSelectedUserReview(item); }}>
                     <View style={styles.reviewContainer}>
-                      <Image source={require('@assets/images/profile_picture.png')} style={styles.reviewImage} />
+                      {item.images.length > 0 && (
+                        <Image source={{ uri: item.images[0].image_url }} style={styles.reviewImage} />
+                      )}
+
                       <View style={styles.reviewTextContainer}>
                         <Text style={styles.reviewText} numberOfLines={3} ellipsizeMode="tail">
                           {item.review}

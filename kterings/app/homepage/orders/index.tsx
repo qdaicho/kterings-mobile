@@ -1,10 +1,10 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, memo } from 'react';
 import { View, Text, StyleSheet, Image, Pressable, FlatList, RefreshControl, Animated } from 'react-native';
 import BackButton from '@/components/common/BackButton';
 import { router } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import { WebView } from 'react-native-webview';
-import { Food, Order } from '@/hooks/types';
+import { Order } from '@/hooks/types';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const formatDate = (dateString: string) => {
@@ -42,6 +42,7 @@ const Orders: React.FC = () => {
       if (response.ok) {
         const sortedOrders = data.orders.sort((a: Order, b: Order) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
         setOrders(sortedOrders);
+        await AsyncStorage.setItem('cachedOrders', JSON.stringify(sortedOrders)); // Cache the orders
       } else {
         console.error(data.message);
       }
@@ -77,20 +78,32 @@ const Orders: React.FC = () => {
     }
   };
 
+  const loadCachedOrders = async () => {
+    try {
+      const cachedOrders = await AsyncStorage.getItem('cachedOrders');
+      if (cachedOrders) {
+        setOrders(JSON.parse(cachedOrders));
+      }
+    } catch (error) {
+      console.error('Error loading cached orders:', error);
+    }
+  };
+
   useEffect(() => {
-    fetchOrders();
+    loadCachedOrders().then(() => {
+      if (orders.length === 0) fetchOrders(); // Fetch only if no cached orders
+    });
   }, []);
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
-    fetchOrders();
+    fetchOrders(); // Manually refresh the orders when the user pulls to refresh
   }, []);
 
   const filterOrders = () => {
     const activeOrders = orders.filter(order =>
       order.status !== 'cancelled' &&
       order.status !== 'delivered' &&
-      order.status !== 'progress' &&
       order.receipt_url &&
       order.track_url
     );
@@ -147,20 +160,16 @@ const Orders: React.FC = () => {
               data={activeOrders}
               keyExtractor={(item) => item.id.toString()}
               renderItem={({ item }) => (
-                <ProductRow
-                  orderId={item.id}
-                  productName={item.items[0]?.name || 'Unknown'}
-                  status={item.status}
-                  price={item.total_price}
-                  createdAt={item.created_at}
-                  receiptUrl={item.receipt_url}
-                  trackUrl={item.track_url}
-                  foodId={item.items[0]?.food_id || ''}
+                <MemoizedProductRow
+                  order={item}
                   openWebView={openWebView}
                   fetchFoodImage={fetchFoodImage}
                   orders={orders}
                 />
               )}
+              initialNumToRender={10}
+              maxToRenderPerBatch={5}
+              windowSize={10}
               ListEmptyComponent={<Text>No active orders</Text>}
               refreshControl={
                 <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
@@ -173,24 +182,17 @@ const Orders: React.FC = () => {
               data={pastOrders}
               keyExtractor={(item) => item.id.toString()}
               renderItem={({ item }) => (
-                <ProductRow
-                  orderId={item.id}
-                  productName={item.items[0]?.name || 'Unknown'}
-                  status={item.status}
-                  price={item.total_price}
-                  createdAt={item.created_at}
-                  receiptUrl={item.receipt_url}
-                  trackUrl={item.track_url}
-                  foodId={item.items[0]?.food_id || ''}
+                <MemoizedProductRow
+                  order={item}
                   openWebView={openWebView}
                   fetchFoodImage={fetchFoodImage}
                   orders={orders}
                 />
               )}
+              initialNumToRender={10}
+              maxToRenderPerBatch={5}
+              windowSize={10}
               ListEmptyComponent={<Text>No past orders</Text>}
-              refreshControl={
-                <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-              }
             />
           </View>
         </>
@@ -327,36 +329,17 @@ const styles = StyleSheet.create({
     color: '#000000',
     marginLeft: 2,
   },
-  skeletonContainer: {
-    flex: 1,
-    padding: 20,
-  },
 });
 
 interface ProductRowProps {
-  orderId: number;
-  imageSource?: string;
-  productName?: string;
-  status?: string;
-  receiptUrl?: string;
-  trackUrl?: string;
-  price?: number;
-  createdAt?: string;
-  foodId: string;
+  order: Order;
   openWebView: (url: string) => void;
   fetchFoodImage: (foodId: string) => Promise<string | null>;
   orders: Order[];
 }
 
-const ProductRow: React.FC<ProductRowProps> = ({
-  orderId,
-  productName = 'Unknown',
-  status = 'Preparing Order',
-  receiptUrl = '',
-  trackUrl = '',
-  price = 35.96,
-  createdAt = '',
-  foodId,
+const ProductRow: React.FC<ProductRowProps> = memo(({
+  order,
   openWebView,
   fetchFoodImage,
   orders,
@@ -365,18 +348,17 @@ const ProductRow: React.FC<ProductRowProps> = ({
 
   useEffect(() => {
     const getImage = async () => {
-      const imageUrl = await fetchFoodImage(foodId);
+      const imageUrl = await fetchFoodImage(order.items[0]?.food_id || '');
       setImageSource(imageUrl);
     };
     getImage();
-  }, [foodId]);
+  }, [order.items]);
 
   const handlePress = async () => {
-    const currentOrder = orders.find(order => order.id === orderId);
+    const currentOrder = orders.find(o => o.id === order.id);
     if (currentOrder) {
       await AsyncStorage.removeItem('current_order');
       await AsyncStorage.setItem('current_order', JSON.stringify(currentOrder));
-      console.log(JSON.stringify(currentOrder, null, 2));
       router.push(`/receipts/`);
     }
   };
@@ -396,17 +378,19 @@ const ProductRow: React.FC<ProductRowProps> = ({
           <Image source={require('@assets/images/products/lasagna.jpg')} style={styles.productImage} />
         )}
         <View style={styles.infoContainer}>
-          <Text style={styles.productName}>ORDER-{orderId}</Text>
-          <Text style={styles.statusText}>{status}</Text>
-          <Text style={styles.createdAtText}>{formatDate(createdAt)}</Text>
-          <Pressable onPress={() => openWebView(receiptUrl)}>
+          <Text style={styles.productName}>ORDER-{order.id}</Text>
+          <Text style={styles.statusText}>{order.status}</Text>
+          <Text style={styles.createdAtText}>{formatDate(order.created_at)}</Text>
+          <Pressable onPress={() => openWebView(order.receipt_url)}>
             <Text style={styles.receiptText}>View Receipt</Text>
           </Pressable>
         </View>
       </View>
-      <Text style={styles.priceText}>${price.toFixed(2)}</Text>
+      <Text style={styles.priceText}>${order.total_price.toFixed(2)}</Text>
     </Pressable>
   );
-};
+});
+
+const MemoizedProductRow = memo(ProductRow);
 
 export default Orders;
