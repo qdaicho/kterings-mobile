@@ -124,7 +124,7 @@ export default function Index() {
     return (
         <View style={{ flex: 1, backgroundColor: '#BF1E2E' }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 70, marginHorizontal: 10 }}>
-                <BackButton onPress={() => router.navigate('/homepage/becomekterer/')} textStyle={{ color: '#FFFFFF' }} color={'#FFFFFF'} />
+                <BackButton onPress={() => router.navigate('/homepage/becomekterer')} textStyle={{ color: '#FFFFFF' }} color={'#FFFFFF'} />
                 <Text style={{ fontSize: 15, fontFamily: 'TT Chocolates Trial Bold', color: '#FFFFFF' }}>Kterer Dashboard</Text>
                 <Pressable onPress={() => console.log('Pressed')}>
                     <MaterialCommunityIcons name="bell-outline" size={24} color="#FFFFFF" style={{ marginRight: 20 }} />

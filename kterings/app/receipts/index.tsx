@@ -99,7 +99,7 @@ export default function index() {
     return (
         <>
             <BackButton
-                onPress={() => router.navigate('/homepage/orders/')}
+                onPress={() => router.navigate('/homepage/orders')}
                 buttonStyle={styles.backButton}
             />
             {webViewVisible && webViewUrl ? (

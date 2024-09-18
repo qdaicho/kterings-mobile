@@ -2,8 +2,8 @@ import * as React from 'react';
 import { ClerkProvider } from "@clerk/clerk-expo";
 import { Slot } from "expo-router";
 import Constants from 'expo-constants';
-import 'react-native-reanimated';
-import 'react-native-gesture-handler';
+// import 'react-native-reanimated';
+// import 'react-native-gesture-handler';
 import { StatusBar } from 'expo-status-bar';
 
 export default function RootLayout({

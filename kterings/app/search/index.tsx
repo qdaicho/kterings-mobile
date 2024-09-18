@@ -1,90 +1,104 @@
 import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, TextInput, Pressable, Text, Image, FlatList } from 'react-native';
+import { View, StyleSheet, TextInput, Pressable, Text, Image, FlatList, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import BackChevron from '@assets/images/back_chevron.svg';
 import { categories } from '@/assets/categories';
-import { products } from '@/assets/products';
-
 import RecentSearchIcon from '@/assets/images/recent_searches.svg';
 import ProductLarge from '@/components/common/ProductLarge';
 import DropDownPicker from 'react-native-dropdown-picker';
-import Fuse from 'fuse.js';
 import { Food } from '@/hooks/types';
-
-
-function deepSearch(items: Food[], searchTerm: string): Food[] {
-  const options = {
-    keys: ['name', 'description', 'ethnic_type'],
-    threshold: 0.6 // Adjust the threshold for fuzziness
-  };
-
-  const fuse = new Fuse(items, options);
-  const results = fuse.search(searchTerm);
-
-  return results.map(result => result.item);
-}
-
+import * as SecureStore from 'expo-secure-store';
 
 export default function Search() {
   const [recentSearches, setRecentSearches] = useState(['pancake', 'chicken curry']);
   const [searchTerm, setSearchTerm] = useState('');
   const [showResults, setShowResults] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [prod, setProd] = useState<Food[]>([]);
+  const [open, setOpen] = useState(false);
+  const [value, setValue] = useState(4.0); // Default rating filter to 4.0+
+  const [items, setItems] = useState([
+    { label: 'Ratings 1.0+', value: 1.0 },
+    { label: 'Ratings 2.0+', value: 2.0 },
+    { label: 'Ratings 3.0+', value: 3.0 },
+    { label: 'Ratings 4.0+', value: 4.0 },
+  ]);
 
   const handleSearch = () => {
     setShowResults(true);
   };
 
-  const handlePopularSearchPress = (text: React.SetStateAction<string>) => {
+  const handlePopularSearchPress = (text: string) => {
     setSearchTerm(text);
+    setShowResults(true);
   };
 
   const handleRecentSearchPress = (text: string) => {
     setSearchTerm(text);
+    setShowResults(true);
   };
 
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [prod, setProd] = useState<Food[]>([]);
-
-
-  const [open, setOpen] = useState(false);
-  const [value, setValue] = useState(null);
-  const [items, setItems] = useState([
-    { label: "Ratings 1.0+", value: 1.0 },
-    { label: "Ratings 2.0+", value: 2.0 },
-    { label: "Ratings 3.0+", value: 3.0 },
-    { label: "Ratings 4.0+", value: 4.0 }
-  ]);
-
   useEffect(() => {
+    if (!showResults) {
+      return;
+    }
+
     const fetchData = async () => {
-
-      // Asynchronous request to get all the food from the database upon load
       try {
-        const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/food`, {
-          method: 'GET',
-        });
-        if (!response.ok) {
-          throw new Error('Network response was not ok');
+        const params = new URLSearchParams();
+        params.append('query', searchTerm);
+
+        const url = `${process.env.EXPO_PUBLIC_API_URL}/food/search?${params.toString()}`;
+        const accessToken = await SecureStore.getItemAsync('token');
+
+        if (!accessToken) {
+          Alert.alert('Error', 'Authentication token is missing. Please log in again.');
+          return;
         }
-        const products = await response.json();
 
-        setProd(deepSearch(products.data, searchTerm));
+        const response = await fetch(url, {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        });
 
-        const filteredProducts = products.data.filter((product: { rating: number; ethnic_type: string; }) =>
-          product.rating >= (value || 4.0) && (selectedCategory ? product.ethnic_type === selectedCategory : true)
-        );
+        if (!response.ok) {
+          throw new Error('Failed to fetch data.');
+        }
 
-        setProd(filteredProducts);
-        // setAllItemsProd(filteredProducts);
-        // setClosestProd(getClosestProducts(filteredProducts));
+        const data = await response.json();
+        console.log('Fetched Data:', data.data); // Log to ensure data is fetched correctly
+
+        // Convert the object into an array and cast it as Food[]
+        const productArray = Object.values(data.data || {}) as Food[];
+        setProd(productArray);
       } catch (error) {
         console.error('Error fetching data:', error);
+        Alert.alert('Error', 'An unexpected error occurred while fetching data.');
       }
     };
 
     fetchData();
-  }, [value, selectedCategory]);
+  }, [showResults, searchTerm, value, selectedCategory]);
+
+
+  const renderProduct = ({ item }: { item: Food }) => {
+    // Ensure images exist and use the first available image URL if present
+    const imageUrl = item.images && item.images.length > 0 ? item.images[0] : '';
+
+    return (
+      <ProductLarge
+        image={{ uri: imageUrl }}
+        name={item.name}
+        category={item.ethnic_type}
+        distance={`${item.auto_delivery_time} min away`}
+        rating={item.rating || 0} // Assuming there is a 'rating' property in your data
+        id={item.id}
+      />
+    );
+  };
 
   return (
     <View style={styles.container}>
@@ -129,16 +143,12 @@ export default function Search() {
                 onPress={() => handleRecentSearchPress(search)}
                 style={({ pressed }) => [
                   styles.recentSearchContainer,
-                  pressed ? styles.recentSearchPressed : null
+                  pressed ? styles.recentSearchPressed : null,
                 ]}
               >
                 {({ pressed }) => (
                   <>
-                    <RecentSearchIcon
-                      width={20}
-                      height={20}
-                      fill={'#000000'} // Apply fill color conditionally
-                    />
+                    <RecentSearchIcon width={20} height={20} fill={'#000000'} />
                     <Text style={pressed ? styles.recentSearchTextPressed : styles.recentSearch}>
                       {search}
                     </Text>
@@ -146,7 +156,6 @@ export default function Search() {
                 )}
               </Pressable>
             ))}
-
           </View>
 
           <View style={styles.popularSearches}>
@@ -157,12 +166,16 @@ export default function Search() {
                   key={index}
                   style={({ pressed }) => [
                     styles.popularSearch,
-                    pressed ? styles.popularSearchPressed : null
+                    pressed ? styles.popularSearchPressed : null,
                   ]}
                   onPress={() => handlePopularSearchPress(item.name)}
                 >
                   {({ pressed }) => (
-                    <Text style={pressed ? styles.popularSearchTextPressed : styles.popularSearchText}>
+                    <Text
+                      style={
+                        pressed ? styles.popularSearchTextPressed : styles.popularSearchText
+                      }
+                    >
                       {item.name}
                     </Text>
                   )}
@@ -177,13 +190,19 @@ export default function Search() {
               data={categories}
               keyExtractor={(_, index) => index.toString()}
               renderItem={({ item }) => (
-                <Pressable onPress={() => setSelectedCategory(selectedCategory === item.name ? null : item.name)}>
+                <Pressable
+                  onPress={() =>
+                    setSelectedCategory(selectedCategory === item.name ? null : item.name)
+                  }
+                >
                   <View style={styles.cuisineItem}>
                     <Image source={item.image} style={styles.cuisineImage} />
-                    <Text style={[
-                      styles.cuisineName,
-                      selectedCategory === item.name ? styles.selectedCuisineName : null
-                    ]}>
+                    <Text
+                      style={[
+                        styles.cuisineName,
+                        selectedCategory === item.name ? styles.selectedCuisineName : null,
+                      ]}
+                    >
                       {item.name}
                     </Text>
                   </View>
@@ -206,7 +225,7 @@ export default function Search() {
               setOpen={setOpen}
               setValue={setValue}
               setItems={setItems}
-              placeholder='Ratings 4.0+'
+              placeholder={`Ratings ${value}.0+`}
               showArrowIcon={false}
               showTickIcon={false}
               dropDownDirection="BOTTOM"
@@ -214,13 +233,9 @@ export default function Search() {
                 backgroundColor: '#BF1E2E',
                 width: 100,
                 borderColor: '#EEEEEE',
-                // borderRadius: 35,
-                borderStartEndRadius: 35,
-                borderStartStartRadius: 35,
-                borderEndEndRadius: 35,
-                borderEndStartRadius: 35,
+                borderRadius: 35,
                 minHeight: 35,
-                zIndex: 2
+                zIndex: 2,
               }}
               textStyle={{
                 fontSize: 12,
@@ -232,12 +247,8 @@ export default function Search() {
               dropDownContainerStyle={{
                 width: 100,
                 borderColor: '#EEEEEE',
-                // borderRadius: 20,
                 marginTop: 10,
-                borderStartEndRadius: 20,
-                borderStartStartRadius: 20,
-                borderEndEndRadius: 20,
-                borderEndStartRadius: 20,
+                borderRadius: 20,
               }}
               listItemLabelStyle={{
                 fontSize: 12,
@@ -245,17 +256,19 @@ export default function Search() {
                 color: '#000000',
                 textAlign: 'center',
               }}
-              itemSeparator={true}
-              itemSeparatorStyle={{ height: 1, backgroundColor: '#EEEEEE', marginHorizontal: 10 }}
+              itemSeparator
+              itemSeparatorStyle={{
+                height: 1,
+                backgroundColor: '#EEEEEE',
+                marginHorizontal: 10,
+              }}
             />
           </View>
 
           <FlatList
             data={prod}
-            keyExtractor={(_, index) => index.toString()}
-            renderItem={({ item }) => (
-              <ProductLarge image={item.images[0].image_url} name={item.name} category={item.ethnic_type} distance={`${item.auto_delivery_time} min away`} rating={item.rating} id={item.id} />
-            )}
+            keyExtractor={(item) => item.id}
+            renderItem={renderProduct}
             style={{ marginTop: 10 }}
           />
         </View>
@@ -265,6 +278,7 @@ export default function Search() {
 }
 
 const styles = StyleSheet.create({
+  // Styles remain unchanged
   container: {
     flex: 1,
     marginHorizontal: 20,
@@ -283,20 +297,20 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 40,
     borderRadius: 10,
-    backgroundColor: "#EBEBEB",
-    flexDirection: "row",
-    alignItems: "center",
+    backgroundColor: '#EBEBEB',
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   icon: {
     marginLeft: 10,
   },
   input: {
     flex: 1,
-    color: "#969696",
-    fontFamily: "TT Chocolates Trial Medium",
+    color: '#969696',
+    fontFamily: 'TT Chocolates Trial Medium',
     fontSize: 13,
     letterSpacing: 0,
-    textAlign: "left",
+    textAlign: 'left',
     marginLeft: 10,
   },
   recentSearches: {
@@ -327,9 +341,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontFamily: 'TT Chocolates Trial Bold',
     marginLeft: 20,
-  },
-  recentSearchIconPressed: {
-    tintColor: '#BF1E2E',
   },
   popularSearches: {
     marginTop: 20,
@@ -408,6 +419,4 @@ const styles = StyleSheet.create({
     fontFamily: 'TT Chocolates Trial Bold',
     color: '#000000',
   },
-
-
 });

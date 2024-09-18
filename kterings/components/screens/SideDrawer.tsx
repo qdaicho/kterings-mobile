@@ -148,7 +148,7 @@ export default function SideDrawer(props: DrawerContentComponentProps) {
                             onPress={() => {
                                 refRBSheet.current && refRBSheet.current.close();
                                 // Sign out actions
-                                router.push("/login/");
+                                router.push("/login");
                             }}
                             buttonStyle={{ marginTop: 20, alignSelf: 'center' }}
                             textStyle={{ fontSize: 16 }}

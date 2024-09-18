@@ -359,7 +359,7 @@ const ProductRow: React.FC<ProductRowProps> = memo(({
     if (currentOrder) {
       await AsyncStorage.removeItem('current_order');
       await AsyncStorage.setItem('current_order', JSON.stringify(currentOrder));
-      router.push(`/receipts/`);
+      router.push(`/receipts`);
     }
   };
 

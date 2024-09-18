@@ -319,6 +319,7 @@ export interface Quantity {
 }
 
 export interface Food {
+  image_url: string | ImageSourcePropType;
   id: string;
   kterer_id: number;
   name: string;
@@ -354,6 +355,7 @@ export interface User {
   created_at: string;
   updated_at: string;
   deleted_at: string | null;
+  kterer?: Kterer;
 }
 
 export interface EarningsResponse {
