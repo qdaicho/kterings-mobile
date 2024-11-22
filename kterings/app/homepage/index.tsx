@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, SetStateAction } from 'react';
 import { View, StyleSheet, Text, TextInput, Dimensions, Pressable, Image, ListRenderItem, SafeAreaView } from 'react-native';
 import * as Font from 'expo-font';
 import Constants from 'expo-constants';
@@ -22,17 +22,24 @@ import DropDownPicker from 'react-native-dropdown-picker';
 import RBSheet from 'react-native-raw-bottom-sheet';
 import KButton from '@/components/common/KButton';
 import OnboardingComponent from '@/components/screens/Onboarding';
-
+import * as SecureStore from 'expo-secure-store';
+import { Food, Quantity, qImage } from '@/hooks/types';
 
 
 
 export default function App() {
 
+
     const Drawer = createDrawerNavigator();
     const navigation = useNavigation();
 
+    const [prod, setProd] = useState<Food[]>([]);
+    const [allItemsProd, setAllItemsProd] = useState<Food[]>([]);
+    const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+    const [closestProd, setClosestProd] = useState<Food[]>([]);
+
     const [open, setOpen] = useState(false);
-    const [value, setValue] = useState(null);
+    const [value, setValue] = useState(1.0);
     const [items, setItems] = useState([
         {
             label: "Ratings 1.0+",
@@ -57,6 +64,19 @@ export default function App() {
         orders?: string[];
     }>();
 
+    const getStoredAddress = async (): Promise<SetStateAction<string | null>> => {
+        try {
+            const storedAddress = await SecureStore.getItemAsync('selectedAddress');
+            if (storedAddress) {
+                return JSON.parse(storedAddress).address;
+            }
+            return null;
+        } catch (error) {
+            console.error('Error getting stored address:', error);
+            return null;
+        }
+    };
+
     useEffect(() => {
         if (orders) {
             refRBSheet.current && refRBSheet.current.open();
@@ -65,15 +85,66 @@ export default function App() {
 
     const [contentChanged, setContentChanged] = useState(false);
 
-    useEffect(() => {
-        if (refRBSheet.current) {
-            refRBSheet.current.open();
-            const timeout = setTimeout(() => {
-                setContentChanged(true);
-            }, 5000); // Change content after 5 seconds
-            return () => clearTimeout(timeout);
+    const [selectedAddress, setSelectedAddress] = useState<string | null>(null);
+
+    const getClosestProducts = (products: any[], maxDistance = 5) => {
+        const sortedProducts = products.sort((a, b) => a.auto_delivery_time - b.auto_delivery_time);
+        const closestCluster = [];
+        let deviation = 0;
+
+        for (let i = 0; i < sortedProducts.length; i++) {
+            if (i === 0) {
+                closestCluster.push(sortedProducts[i]);
+            } else {
+                const currentDeviation = Math.abs(sortedProducts[i].auto_delivery_time - sortedProducts[i - 1].auto_delivery_time);
+                if (currentDeviation <= maxDistance) {
+                    closestCluster.push(sortedProducts[i]);
+                    deviation += currentDeviation;
+                } else {
+                    break;
+                }
+            }
         }
-    }, []);
+        return closestCluster;
+    };
+
+
+    useEffect(() => {
+        const fetchData = async () => {
+            // if (refRBSheet.current) {
+            //     refRBSheet.current.open();
+            //     const timeout = setTimeout(() => {
+            //         setContentChanged(true);
+            //     }, 5000); // Change content after 5 seconds
+            //     return () => clearTimeout(timeout);
+            // }
+
+            // Asynchronous request to get all the food from the database upon load
+            try {
+                const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/food`, {
+                    method: 'GET',
+                });
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                const products = await response.json();
+                // Handle the fetched products here
+                // console.log(products.data);
+                setProd(products.data);
+
+                const filteredProducts = products.data.filter((product: { rating: number; ethnic_type: string; }) =>
+                    product.rating >= (value || 4.0) && (selectedCategory ? product.ethnic_type === selectedCategory : true)
+                );
+                setAllItemsProd(filteredProducts);
+                setClosestProd(getClosestProducts(filteredProducts));
+                setSelectedAddress(await getStoredAddress());
+            } catch (error) {
+                console.error('Error fetching data:', error);
+            }
+        };
+
+        fetchData();
+    }, [value, selectedCategory]); // Empty dependency array to run the effect only once on mount
 
 
     return (
@@ -167,19 +238,22 @@ export default function App() {
                         <View style={{ flexDirection: 'row', justifyContent: 'space-between', width: '90%', alignItems: 'center', marginBottom: 10 }}>
                             <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
                                 <Entypo name="menu" size={40} color="#BF1E2E" onPress={() => navigation.dispatch(DrawerActions.openDrawer())} />
-                                <View style={{ marginLeft: 20 }}>
+
+                                <View style={{ marginLeft: 20, width: '65%' }}>
                                     <Text style={{ fontSize: 15, fontFamily: 'TT Chocolates Trial Bold', color: '#000000' }}>Delivering to</Text>
-                                    <Text style={{ fontSize: 12, fontFamily: 'TT Chocolates Trial Regular', color: '#969696' }}>address</Text>
+                                    <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                                        <Text style={{ fontSize: 12, fontFamily: 'TT Chocolates Trial Regular', color: '#969696' }}>
+                                            {selectedAddress}
+                                        </Text>
+                                    </ScrollView>
                                 </View>
                             </View>
                             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                                <Pressable onPress={() => router.navigate('/notifications')}>
-                                    <MaterialCommunityIcons name="bell-outline" size={24} color="#BF1E2E" style={{ marginRight: 20 }} />
 
-                                </Pressable>
-                                <Pressable onPress={() => router.navigate('/cart')}>
-                                    <MaterialCommunityIcons name="shopping-outline" size={24} color="#BF1E2E" />
-                                </Pressable>
+                                <MaterialCommunityIcons name="bell-outline" size={24} color="#BF1E2E" style={{ marginRight: 20 }} onPress={() => router.navigate('/notifications')} />
+
+                                <MaterialCommunityIcons name="shopping-outline" size={24} color="#BF1E2E" onPress={() => router.navigate('/cart')} />
+
                             </View>
                         </View>
                         <View style={styles.inputContainer}>
@@ -210,14 +284,19 @@ export default function App() {
                                 )}
                                 {item === 'categories' && (
                                     <FlatList
-
                                         data={categories}
                                         keyExtractor={(_, index) => index.toString()}
                                         renderItem={({ item }) => (
-                                            <View style={{ flexDirection: 'column', alignItems: 'center', marginBottom: 10, justifyContent: 'center', marginRight: 20, }}>
-                                                <Image source={item.image} style={{ width: 50, height: 50, marginBottom: 10 }} />
-                                                <Text style={{ fontSize: 10, fontFamily: 'TT Chocolates Trial Medium', color: '#000000' }}>{item.name}</Text>
-                                            </View>
+                                            <Pressable onPress={() => setSelectedCategory(selectedCategory === item.name ? null : item.name)}>
+                                                <View style={{ flexDirection: 'column', alignItems: 'center', marginBottom: 10, justifyContent: 'center', marginRight: 20 }}>
+                                                    <Image source={item.image} style={{ width: 50, height: 50, marginBottom: 10 }} />
+                                                    <Text style={{
+                                                        fontSize: 10,
+                                                        fontFamily: selectedCategory === item.name ? 'TT Chocolates Trial Bold' : 'TT Chocolates Trial Medium',
+                                                        color: selectedCategory === item.name ? '#BF1E2E' : '#000000'
+                                                    }}>{item.name}</Text>
+                                                </View>
+                                            </Pressable>
                                         )}
                                         horizontal
                                     />
@@ -232,11 +311,17 @@ export default function App() {
                                 )}
                                 {item === 'nearYou' && (
                                     <FlatList
-                                        data={products}
+                                        data={closestProd}
                                         keyExtractor={(_, index) => index.toString()}
                                         renderItem={({ item }) => (
-                                            <Product image={item.image} name={item.name} category={item.category} distance={item.distance} rating={item.rating} />
-                                        )}
+                                            <Product
+                                                image={item.images[0].image_url}
+                                                name={item.name}
+                                                category={item.ethnic_type}
+                                                distance={`${item.auto_delivery_time} min away`}
+                                                rating={parseFloat(item.rating.toFixed(2))}
+                                                id={item.id}
+                                            />)}
                                         horizontal
                                         style={{ marginTop: 10 }}
                                     />
@@ -293,10 +378,11 @@ export default function App() {
                                 )}
                                 {item === 'allItems' && (
                                     <FlatList
-                                        data={products}
+                                        data={allItemsProd}
                                         keyExtractor={(_, index) => index.toString()}
                                         renderItem={({ item }) => (
-                                            <ProductLarge image={item.image} name={item.name} category={item.category} distance={item.distance} rating={item.rating} />
+                                            <ProductLarge image={item.images[0].image_url} name={item.name} category={item.ethnic_type} distance={`${item.auto_delivery_time} min away`} rating={parseFloat(item.rating.toFixed(2))}
+                                                id={item.id} />
                                         )}
                                         style={{ marginTop: 10 }}
                                     />

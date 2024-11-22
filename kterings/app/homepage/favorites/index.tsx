@@ -1,59 +1,74 @@
-import { View, Text, StyleSheet, Image } from 'react-native'
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, Image, Pressable, FlatList, RefreshControl, Dimensions } from 'react-native';
 import DropDownPicker from 'react-native-dropdown-picker';
 import BackButton from '@/components/common/BackButton';
 import { router } from 'expo-router';
-import { SvgUri } from 'react-native-svg';
-import Sara from '@assets/images/sara_delight.svg';
-import Donuts from '@assets/images/just_donuts.svg';
-import Indian from '@assets/images/indian_taste.svg';
-import Foodstop from '@assets/images/local_foodstop.svg';
-import AllRamen from '@assets/images/all_things_ramen.svg';
-export default function favorites() {
+import * as SecureStore from 'expo-secure-store';
+import { Kterer } from '@/hooks/types';
 
+
+export default function Favorites() {
   const [open, setOpen] = useState(false);
-  const [value, setValue] = useState(null);
+  const [value, setValue] = useState<number | null>(1.0);
   const [items, setItems] = useState([
-    {
-      label: "Ratings 1.0+",
-      value: 1.0,
-    },
-    {
-      label: "Ratings 2.0+",
-      value: 2.0,
-    },
-    {
-      label: "Ratings 3.0+",
-      value: 3.0,
-    },
-    {
-      label: "Ratings 4.0+",
-      value: 4.0,
-    },
+    { label: "Ratings 1.0+", value: 1.0 },
+    { label: "Ratings 2.0+", value: 2.0 },
+    { label: "Ratings 3.0+", value: 3.0 },
+    { label: "Ratings 4.0+", value: 4.0 },
   ]);
+  const [favoriteKterers, setFavoriteKterers] = useState<Kterer[]>([]);
+  const [refreshing, setRefreshing] = useState(false);
 
-  const favoriteKterers = [
-    {
-      label: 'Sara\'s Delights',
-      image: Sara
-    },
-    {
-      label: 'Just Donuts',
-      image: Donuts
-    },
-    {
-      label: 'Indian Taste',
-      image: Indian
-    },
-    {
-      label: 'Local Foodstop',
-      image: Foodstop
-    },
-    {
-      label: 'All Things Ramen',
-      image: AllRamen
+  const fetchFavorites = async () => {
+    try {
+      const token = await SecureStore.getItemAsync('token');
+      const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/favourites`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch favorites');
+      }
+
+      const data = await response.json();
+      setFavoriteKterers(data.kterers);
+    } catch (error) {
+      console.error('Error fetching favorite Kterers:', error);
     }
-  ]
+  };
+
+  useEffect(() => {
+    fetchFavorites();
+  }, []);
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchFavorites();
+    setRefreshing(false);
+  };
+
+  const handleFilterChange = (value: number) => {
+    setValue(value);
+  };
+
+  const filteredKterers = favoriteKterers.filter(kterer => kterer.rating >= (value || 4.0));
+
+  const handleKtererPress = (id: number) => {
+    router.push({ pathname: '/sellerpage/', params: { id: id } });
+  };
+
+  const renderFavoriteKterer = ({ item }: { item: Kterer }) => (
+    <Pressable key={item.id} style={styles.ktererContainer} onPress={() => handleKtererPress(item.id)}>
+      <Image source={{ uri: item.profile_image_url }} style={styles.ktererImage} />
+      <Text style={styles.ktererLabel}>{item.user.first_name} {item.user.last_name}</Text>
+      <Text style={styles.ktererRating}>Rating: {item.rating}</Text>
+    </Pressable>
+  );
+
   return (
     <>
       <BackButton
@@ -78,7 +93,6 @@ export default function favorites() {
               backgroundColor: '#BF1E2E',
               width: 100,
               borderColor: '#EEEEEE',
-              // borderRadius: 35,
               borderStartEndRadius: 35,
               borderStartStartRadius: 35,
               borderEndEndRadius: 35,
@@ -96,7 +110,6 @@ export default function favorites() {
             dropDownContainerStyle={{
               width: 100,
               borderColor: '#EEEEEE',
-              // borderRadius: 20,
               marginTop: 10,
               borderStartEndRadius: 20,
               borderStartStartRadius: 20,
@@ -114,49 +127,18 @@ export default function favorites() {
           />
         </View>
 
-        <View
-          style={{
-            flexDirection: 'row',
-            flexWrap: 'wrap',
-            alignItems: 'flex-start',
-            marginHorizontal: 20,
-            marginTop: 50,
-            justifyContent: 'space-evenly', // Allow wrap to work properly
-            alignSelf: 'center',
-            zIndex: 0,
-          }}
-        >
-          {favoriteKterers.map((kterer, index) => (
-            <View
-              key={index}
-              style={{
-                flexDirection: 'column',
-                alignItems: 'center',
-                // padding: 5,
-                // marginRight: 10, // Optional: Space between items
-                marginBottom: 50, // Optional: Space between rows
-                width: 'auto', // Allow natural wrapping
-              }}
-            >
-              <kterer.image width={60} height={60} />
-              <Text
-                style={{
-                  fontSize: 12,
-                  fontFamily: 'TT Chocolates Trial Bold',
-                  color: '#000000',
-                  textAlign: 'center', // Ensure the text is centered
-                  width: 'auto', // Allow natural wrapping
-                }}
-              >
-                {kterer.label}
-              </Text>
-            </View>
-          ))}
-        </View>
-
+        <FlatList
+          contentContainerStyle={styles.kterersContainer}
+          data={filteredKterers}
+          keyExtractor={(item) => item.id.toString()}
+          renderItem={renderFavoriteKterer}
+          numColumns={3}
+          columnWrapperStyle={styles.columnWrapper}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+        />
       </View>
     </>
-  )
+  );
 }
 
 const styles = StyleSheet.create({
@@ -184,4 +166,40 @@ const styles = StyleSheet.create({
     left: 30,
     zIndex: 2,
   },
-})
+  kterersContainer: {
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    marginHorizontal: 20,
+    marginTop: 50,
+    justifyContent: 'space-evenly',
+    alignSelf: 'center',
+    zIndex: 0,
+  },
+  columnWrapper: {
+    justifyContent: 'space-between',
+  },
+  ktererContainer: {
+    flexDirection: 'column',
+    alignItems: 'center',
+    marginBottom: 50,
+    width: Dimensions.get('window').width / 3 - 10,
+  },
+  ktererImage: {
+    width: 100,
+    height: 100,
+  },
+  ktererLabel: {
+    fontSize: 12,
+    fontFamily: 'TT Chocolates Trial Bold',
+    color: '#000000',
+    textAlign: 'center',
+    width: 'auto',
+    marginTop: 20,
+  },
+  ktererRating: {
+    fontSize: 10,
+    fontFamily: 'TT Chocolates Trial Medium',
+    color: '#969696',
+    textAlign: 'center',
+  },
+});

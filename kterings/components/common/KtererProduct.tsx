@@ -11,29 +11,30 @@ interface Props {
     distance: string
     rating: number
     onTrashPress: () => void
+    onEditPress: () => void
 }
 
-const Product: React.FC<Props> = ({ image, name, category, distance, rating, onTrashPress }) => {
+const Product: React.FC<Props> = ({ image, name, category, distance, rating, onTrashPress, onEditPress }) => {
     return (
         <View style={styles.container}>
             <View style={styles.buttonsContainer}>
                 <Pressable style={styles.button} onPress={onTrashPress}>
                     <FontAwesome name="trash" size={14} color="#333" />
                 </Pressable>
-                <Pressable style={styles.button} onPress={() => router.navigate('/keditfood/')}>
+                <Pressable style={styles.button} onPress={onEditPress}>
                     <FontAwesome name="pencil" size={14} color="#333" />
                 </Pressable>
             </View>
             <Pressable onPress={() => {
-                router.navigate({
-                    pathname: '/productscreen/', params: {
-                        image: image,
-                        name: name,
-                        category: category,
-                        distance: distance,
-                        rating: rating
-                    }
-                });
+                // router.navigate({
+                //     pathname: '/productscreen/', params: {
+                //         image: image,
+                //         name: name,
+                //         category: category,
+                //         distance: distance,
+                //         rating: rating
+                //     }
+                // });
             }}>
                 <View style={styles.card}>
                     <View style={styles.cardHeader}>

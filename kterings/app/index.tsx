@@ -4,16 +4,17 @@ import * as Font from 'expo-font';
 import OnboardingComponent from '../components/screens/Onboarding';
 import Constants from 'expo-constants';
 import { SignedIn, SignedOut } from '@clerk/clerk-expo';
-import { useRouter } from 'expo-router';
 import { Redirect } from "expo-router";
-import 'react-native-reanimated';
 import { useEffect, useState } from 'react';
+import { registerRootComponent } from 'expo';
+import 'react-native-gesture-handler';
 
-export default function App() {
+// Main App component
+function App() {
     const [fontsLoaded, setFontsLoaded] = useState(false);
-    const router = useRouter();
 
     useEffect(() => {
+        // Load custom fonts
         async function loadFonts() {
             await Font.loadAsync({
                 'TT Chocolates Trial Regular': require('../assets/fonts/TT Chocolates Trial Regular.otf'),
@@ -24,37 +25,35 @@ export default function App() {
         }
 
         loadFonts();
-
-
     }, []);
 
+    // Display nothing until fonts are loaded
     if (!fontsLoaded) {
-        return null; // You can show a loading indicator here if necessary
+        return null; // Optionally show a loading screen here
     }
-    // else{
-    //     router.navigate('/homepage'); 
-    // }
 
     return (
         <View style={styles.container}>
+            {/* Display the onboarding component if the user is signed out */}
             <SignedOut>
                 <OnboardingComponent />
-
             </SignedOut>
 
+            {/* Redirect to homepage if the user is signed in */}
             <SignedIn>
-                {/* <Redirect href="/homepage/" /> */}
-                <View style={{ marginTop: Constants.statusBarHeight, flex: 1 }}>
-                    <Text>Hello</Text>
-                </View>
+                <Redirect href="/homepage/" />
             </SignedIn>
-
         </View>
     );
-};
+}
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
     },
 });
+
+// Register the root component
+registerRootComponent(App);
+
+export default App;

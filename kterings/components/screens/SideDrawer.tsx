@@ -1,26 +1,81 @@
-import { View, Text, StyleSheet } from 'react-native'
-import React, { useRef } from 'react'
-import { useRouter } from 'expo-router'
-import { DrawerContent, DrawerContentComponentProps, DrawerContentScrollView, DrawerItem, DrawerItemList } from '@react-navigation/drawer';
-import BackButton from '../common/BackButton';
-import { useNavigation } from 'expo-router';
-import { DrawerActions } from '@react-navigation/native';
+import { View, Text, StyleSheet } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { useRouter } from 'expo-router';
+import { DrawerContentComponentProps, DrawerContentScrollView, DrawerItem, DrawerItemList } from '@react-navigation/drawer';
 import BackChevron from '@assets/images/back_chevron.svg';
 import Logout from '@assets/images/logout_icon.svg';
-import { useClerk } from '@clerk/clerk-expo';
 import RBSheet from 'react-native-raw-bottom-sheet';
 import KButton from '../common/KButton';
+import * as SecureStore from 'expo-secure-store';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+interface UserDetails {
+    first_name: string;
+    last_name: string;
+    phone: string;
+    email: string;
+    country: string;
+}
+
 export default function SideDrawer(props: DrawerContentComponentProps) {
     const router = useRouter();
-    const { user, signOut } = useClerk();
+    const [user, setUser] = useState<UserDetails | null>(null);
     const refRBSheet = useRef<RBSheet>(null);
+
+    const fetchUserDetails = async () => {
+        try {
+            const token = await SecureStore.getItemAsync("token");
+
+            const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/user`, {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+
+            if (!response.ok) {
+                console.error(`Error: ${response.statusText}`);
+                return;
+            }
+
+            const data = await response.json();
+            setUser(data.user);
+
+            // Cache user details
+            await AsyncStorage.setItem('userDetails', JSON.stringify(data.user));
+        } catch (error) {
+            console.error('Error fetching user details:', error);
+        }
+    };
+
+    const loadCachedUserDetails = async () => {
+        try {
+            const cachedUser = await AsyncStorage.getItem('userDetails');
+
+            if (cachedUser) {
+                const user = JSON.parse(cachedUser);
+                setUser(user);
+            } else {
+                // Fetch from API if no cached data
+                await fetchUserDetails();
+            }
+        } catch (error) {
+            console.error('Error loading cached user details:', error);
+        }
+    };
+
+    useEffect(() => {
+        loadCachedUserDetails();
+    }, []);
+
+    const handleSignOut = () => {
+        refRBSheet.current && refRBSheet.current.open();
+    };
 
     return (
         <View style={styles.drawerContent}>
-            {/* <BackButton onPress={() => { console.log('pressed') }} buttonStyle={styles.backButton} />
-            <Text style={{ fontSize: 16, fontFamily: 'TT Chocolates Trial Bold', color: '#000000', marginLeft: 20 }}>{user?.fullName}</Text> */}
-
-            <DrawerContentScrollView {...props} scrollEnabled={false} style={{}}>
+            <DrawerContentScrollView {...props} scrollEnabled={false}>
                 <DrawerItem
                     label="Back"
                     onPress={() => { props.navigation.closeDrawer(); }}
@@ -30,23 +85,20 @@ export default function SideDrawer(props: DrawerContentComponentProps) {
                         fontSize: 16,
                         letterSpacing: 0,
                         fontWeight: '500',
-                        rowGap: 0
                     }}
                     icon={() => <BackChevron />}
                     style={{ marginBottom: 20 }}
                 />
-                <Text style={{ fontSize: 16, fontFamily: 'TT Chocolates Trial Bold', color: '#000000', marginLeft: 20, marginBottom: 20 }}>{user?.fullName}</Text>
+                <Text style={{ fontSize: 16, fontFamily: 'TT Chocolates Trial Bold', color: '#000000', marginLeft: 20, marginBottom: 20 }}>
+                    {user ? `${user.first_name} ${user.last_name}` : 'Loading...'}
+                </Text>
                 <DrawerItemList {...props} />
             </DrawerContentScrollView>
             <DrawerItem
                 label="Log Out"
-                onPress={() => {
-                    router.push("/login/");
-                    signOut();
-                    refRBSheet.current && refRBSheet.current.open();
-                }}
+                onPress={handleSignOut}
                 labelStyle={{ fontSize: 14, fontFamily: 'TT Chocolates Trial Medium', color: '#000000' }}
-                style={{ marginBottom: 30, }}
+                style={{ marginBottom: 30 }}
                 icon={() => <Logout />}
             />
 
@@ -73,10 +125,7 @@ export default function SideDrawer(props: DrawerContentComponentProps) {
                 }}
             >
                 <View style={{ flex: 1, flexDirection: 'column', justifyContent: 'space-between' }}>
-                    <View style={{
-                        marginLeft: 40,
-                        marginRight: 40,
-                    }}>
+                    <View style={{ marginLeft: 40, marginRight: 40 }}>
                         <Text style={{
                             color: '#000000',
                             fontFamily: 'TT Chocolates Trial Bold',
@@ -98,33 +147,22 @@ export default function SideDrawer(props: DrawerContentComponentProps) {
                             title="Confirm"
                             onPress={() => {
                                 refRBSheet.current && refRBSheet.current.close();
-                                signOut();
-                                router.push("/login/");
+                                // Sign out actions
+                                router.push("/login");
                             }}
-                            buttonStyle={{
-                                marginTop: 20,
-                                alignSelf: 'center'
-                            }}
-                            textStyle={{
-                                fontSize: 16,
-                            }}
+                            buttonStyle={{ marginTop: 20, alignSelf: 'center' }}
+                            textStyle={{ fontSize: 16 }}
                         />
                     </View>
                 </View>
             </RBSheet>
-
         </View>
-    )
+    );
 }
 
 const styles = StyleSheet.create({
     drawerContent: {
         flex: 1,
-        marginLeft: 20
+        marginLeft: 20,
     },
-    backButton: {
-        position: 'absolute',
-        top: 50,
-        left: 20
-    }
-})
+});

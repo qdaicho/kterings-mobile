@@ -1,502 +1,708 @@
-import { View, Text, Pressable, StyleSheet, TextInput, ScrollView } from 'react-native'
-import React, { useState } from 'react'
-import { Entypo, MaterialCommunityIcons } from '@expo/vector-icons';
-import { FontAwesome6 } from '@expo/vector-icons';
-import { Feather, FontAwesome } from '@expo/vector-icons';
-import { DrawerActions } from '@react-navigation/native';
-import { router, useNavigation } from 'expo-router';
+import React, { useState } from 'react';
+import { View, Text, Pressable, StyleSheet, TextInput, FlatList, Image, Alert, KeyboardAvoidingView, Platform } from 'react-native';
+import { MaterialCommunityIcons, FontAwesome, Feather } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
+import { router } from 'expo-router';
 import BackButton from "@/components/common/BackButton";
 import KBottomButton from "@/components/common/KBottomButton";
-import DropDownPicker from 'react-native-dropdown-picker';
+import DropDownPicker, { ItemType } from 'react-native-dropdown-picker';
+import * as ImagePicker from 'expo-image-picker';
+import axios from 'axios';
+import * as SecureStore from 'expo-secure-store';
 
-export default function index() {
+const Index = () => {
     const navigation = useNavigation();
 
+    // Form states
+    const [name, setName] = useState('');
+    const [description, setDescription] = useState('');
+    const [ingredients, setIngredients] = useState('');
+    const [halalValue, setHalalValue] = useState<string | null>(null);
+    const [kosherValue, setKosherValue] = useState<boolean>(false);
+    const [vegetarianValue, setVegetarianValue] = useState<string | null>(null);
+    const [dessertsValue, setDessertsValue] = useState<string | null>(null);
+    const [containsNuts, setContainsNuts] = useState<boolean>(false);
+    const [meatValue, setMeatValue] = useState<string | null>(null);
+    const [ethnicityValue, setEthnicityValue] = useState<string | null>(null);
+    const [timeValue, setTimeValue] = useState<string | null>(null);
+    const [selectedImages, setSelectedImages] = useState<string[]>([]);
+
+    // States for size options
+    const [smallActive, setSmallActive] = useState(false);
+    const [mediumActive, setMediumActive] = useState(false);
+    const [largeActive, setLargeActive] = useState(false);
+
+    const [smallPrice, setSmallPrice] = useState('');
+    const [smallAmount, setSmallAmount] = useState('');
+    const [mediumPrice, setMediumPrice] = useState('');
+    const [mediumAmount, setMediumAmount] = useState('');
+    const [largePrice, setLargePrice] = useState('');
+    const [largeAmount, setLargeAmount] = useState('');
+
+    // Stateless variables for TextInput handling
+    let nameInput = '';
+    let descriptionInput = '';
+    let ingredientsInput = '';
+    let smallPriceInput = '';
+    let smallAmountInput = '';
+    let mediumPriceInput = '';
+    let mediumAmountInput = '';
+    let largePriceInput = '';
+    let largeAmountInput = '';
+
+    // Dropdown states
     const [halalOpen, setHalalOpen] = useState(false);
-    const [halalValue, setHalalValue] = useState(null);
-    const [halalOptions, setHalalOptions] = useState([
-        { label: 'Halal - Hand Slaughtered', value: '1' },
-        { label: 'Halal - Machine Slaughtered', value: '2' },
-        { label: 'Not Halal', value: '3' },
-    ]);
-
     const [kosherOpen, setKosherOpen] = useState(false);
-    const [kosherValue, setKosherValue] = useState(null);
-    const [kosherOptions, setKosherOptions] = useState([
-        { label: 'Yes', value: '1' },
-        { label: 'No', value: '2' },
-    ]);
-
-
+    const [vegetarianOpen, setVegetarianOpen] = useState(false);
+    const [dessertsOpen, setDessertsOpen] = useState(false);
     const [meatOpen, setMeatOpen] = useState(false);
-    const [meatValue, setMeatValue] = useState(null);
-    const [meatOptions, setMeatOptions] = useState([
-        { label: 'Chicken', value: '1' },
-        { label: 'Beef', value: '2' },
-        { label: 'Pork', value: '3' },
-        { label: 'Lamb', value: '4' },
-        { label: 'Turkey', value: '5' },
-        { label: 'Duck', value: '6' },
-        { label: 'Veal', value: '7' },
-        // Add more options as needed
-    ]);
-
     const [ethnicityOpen, setEthnicityOpen] = useState(false);
-    const [ethnicityValue, setEthnicityValue] = useState(null);
-    const [ethnicityOptions, setEthnicityOptions] = useState([
-        { label: 'Indian', value: '1' },
-        { label: 'Italian', value: '2' },
-        { label: 'American', value: '3' },
-        { label: 'Chinese', value: '4' },
-        { label: 'Mexican', value: '5' },
-        { label: 'Japanese', value: '6' },
-        { label: 'French', value: '7' },
-        // Add more options as needed
-    ]);
-
     const [timeOpen, setTimeOpen] = useState(false);
-    const [timeValue, setTimeValue] = useState(null);
 
-    // Generate time options from 5 to 60 minutes with 5-minute intervals
-    const timeOptions: { label: string; value: string }[] = [];
-    for (let i = 5; i <= 60; i += 5) {
+    // Define dropdown options
+    const halalOptions = [
+        { label: 'No', value: 'No' },
+        { label: 'Halal - Hand Slaughtered', value: 'hand-slaughtered' },
+        { label: 'Halal - Machine Slaughtered', value: 'machine-slaughtered' },
+        { label: "Halal - Doesn't Have Meat", value: 'doesnt-have-meat' },
+    ];
+
+    const kosherOptions = [
+        { label: 'Yes', value: true },
+        { label: 'No', value: false },
+    ];
+
+    const vegetarianOptions = [
+        { label: 'Vegetarian', value: 'Vegetarian' },
+        { label: 'Vegan', value: 'Vegan' },
+        { label: 'None', value: 'None' },
+    ];
+
+    const dessertOptions = [
+        { label: 'Desserts', value: 'Desserts' },
+        { label: 'Drinks', value: 'Drinks' },
+        { label: 'None', value: 'None' },
+    ];
+
+    const meatOptions = [
+        { label: 'Beef', value: 'Beef' },
+        { label: 'Goat', value: 'Goat' },
+        { label: 'Lamb', value: 'Lamb' },
+        { label: 'Chicken', value: 'Chicken' },
+        { label: 'Pork', value: 'Pork' },
+        { label: 'Fish', value: 'Fish' },
+        { label: 'Other', value: 'Other' },
+        { label: 'None', value: 'None' },
+    ];
+
+    const ethnicityOptions = [
+        { label: 'Pakistani', value: 'Pakistan' },
+        { label: 'Indian', value: 'Indian' },
+        { label: 'Chinese', value: 'Chinese' },
+        { label: 'Italian', value: 'Italian' },
+        { label: 'Thai', value: 'Thai' },
+        { label: 'Mexican', value: 'Mexican' },
+        { label: 'Korean', value: 'Korean' },
+        { label: 'Asian', value: 'Asian' },
+        { label: 'Middle-Eastern', value: 'Middle-Eastern' },
+        { label: 'Other', value: 'Other' },
+        { label: 'None', value: 'None' },
+    ];
+
+    const timeOptions: ItemType<string>[] = [];
+    for (let i = 15; i <= 60; i += 10) {
         timeOptions.push({ label: `${i} minutes`, value: `${i}` });
     }
 
-    const setTimeOptions = (newOptions) => {
-        // You can add additional logic here if needed
-        setTimeOptions(newOptions);
+    // Toggle size buttons
+    const toggleSize = (size: string) => {
+        switch (size) {
+            case 'small':
+                setSmallActive(!smallActive);
+                if (!smallActive) {
+                    setSmallPrice('');
+                    setSmallAmount('');
+                }
+                break;
+            case 'medium':
+                setMediumActive(!mediumActive);
+                if (!mediumActive) {
+                    setMediumPrice('');
+                    setMediumAmount('');
+                }
+                break;
+            case 'large':
+                setLargeActive(!largeActive);
+                if (!largeActive) {
+                    setLargePrice('');
+                    setLargeAmount('');
+                }
+                break;
+            default:
+                break;
+        }
     };
 
+    // Handle dropdowns
+    const handleDropdownOpen = (dropdown: string) => {
+        if (dropdown !== 'halal') setHalalOpen(false);
+        if (dropdown !== 'kosher') setKosherOpen(false);
+        if (dropdown !== 'vegetarian') setVegetarianOpen(false);
+        if (dropdown !== 'desserts') setDessertsOpen(false);
+        if (dropdown !== 'meat') setMeatOpen(false);
+        if (dropdown !== 'ethnicity') setEthnicityOpen(false);
+        if (dropdown !== 'time') setTimeOpen(false);
+    };
+
+    // Handle image selection
+    const askPermissionsAsync = async () => {
+        const { status: cameraStatus } = await ImagePicker.requestCameraPermissionsAsync();
+        const { status: cameraRollStatus } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (cameraStatus !== 'granted' || cameraRollStatus !== 'granted') {
+            Alert.alert('Permission to access camera and photos is required!');
+            return false;
+        }
+        return true;
+    };
+
+    const pickImage = async () => {
+        const hasPermission = await askPermissionsAsync();
+        if (!hasPermission) return;
+
+        if (selectedImages.length >= 3) {
+            Alert.alert('You can only select up to 3 images');
+            return;
+        }
+        let result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ImagePicker.MediaTypeOptions.Images,
+            allowsEditing: true,
+            quality: 0.2,
+        });
+        if (!result.canceled && result.assets && result.assets.length > 0) {
+            setSelectedImages([...selectedImages, result.assets[0].uri]);
+        }
+    };
+
+    const takePhoto = async () => {
+        const hasPermission = await askPermissionsAsync();
+        if (!hasPermission) return;
+
+        if (selectedImages.length >= 3) {
+            Alert.alert('You can only select up to 3 images');
+            return;
+        }
+        let result = await ImagePicker.launchCameraAsync({
+            allowsEditing: true,
+            quality: 1,
+        });
+        if (!result.canceled && result.assets && result.assets.length > 0) {
+            setSelectedImages([...selectedImages, result.assets[0].uri]);
+        }
+    };
+
+    const removeImage = (uri: string) => {
+        setSelectedImages(selectedImages.filter(imageUri => imageUri !== uri));
+    };
+
+    const handleUpdateFood = async () => {
+        // Retrieve the access token from SecureStore
+        const accessToken = await SecureStore.getItemAsync("token");
+    
+        if (!accessToken) {
+            Alert.alert('Error', 'Authentication token is missing. Please log in again.');
+            return;
+        }
+    
+        // Prepare the form data
+        const formData = new FormData();
+        formData.append('name', name);
+        formData.append('description', description);
+        formData.append('ingredients', ingredients);
+        formData.append('halal', halalValue || '');
+        formData.append('kosher', kosherValue.toString());
+        formData.append('vegetarian', vegetarianValue || '');
+        formData.append('desserts', dessertsValue || '');
+        formData.append('contains_nuts', containsNuts.toString());
+        formData.append('meat_type', meatValue || '');
+        formData.append('ethnic_type', ethnicityValue || '');
+        formData.append('auto_delivery_time', timeValue || '');
+    
+        // Construct the quantities array based on selected sizes and prices
+        const quantities = [
+            { size: 'small', price: smallPrice, quantity: smallAmount },
+            { size: 'medium', price: mediumPrice, quantity: mediumAmount },
+            { size: 'large', price: largePrice, quantity: largeAmount },
+        ].filter(item => item.price && item.quantity); // Filter out entries without values
+    
+        // Append the quantities array as a JSON string
+        formData.append('quantities', JSON.stringify(quantities));
+    
+        // Add selected images to the form data
+        selectedImages.forEach((imageUri, index) => {
+            formData.append(`image_${index + 1}`, {
+                uri: imageUri,
+                type: 'image/jpeg',
+                name: `photo_${index + 1}.jpg`,
+            });
+        });
+    
+        try {
+            // Send the request to the backend
+            const response = await axios.post(`${process.env.EXPO_PUBLIC_API_URL}/food`, formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                    Authorization: `Bearer ${accessToken}`, // Use the retrieved access token
+                },
+            });
+    
+            // Handle the response
+            if (response.status === 200) {
+                Alert.alert('Food posted successfully!');
+            } else {
+                Alert.alert('There was a problem submitting your post.');
+            }
+        } catch (error) {
+            console.error('Error posting food:', error);
+            Alert.alert('Failed to post food. Please try again.');
+        }
+    };
+    
+
     return (
-        <View style={{ flex: 1 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 70, marginHorizontal: 10 }}>
-                {/* <Entypo name="menu" size={40} color="#BF1E2E" onPress={() => navigation.dispatch(DrawerActions.openDrawer())} /> */}
-                <BackButton onPress={() => router.navigate('/homepage/becomekterer/')} />
-                <Text style={{ fontSize: 15, fontFamily: 'TT Chocolates Trial Bold', color: '#000000' }}>Kterer Dashboard</Text>
-                <Pressable onPress={() => console.log('Pressed')}>
-                    <MaterialCommunityIcons name="bell-outline" size={24} color="#BF1E2E" style={{ marginRight: 20 }} />
-                </Pressable>
+        <KeyboardAvoidingView
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
+            style={{ flex: 1 }}
+        >
+            <View style={{ flex: 1 }}>
+                <View style={styles.headerContainer}>
+                    <BackButton onPress={() => router.navigate('/homepage/becomekterer')} />
+                    <Text style={styles.dashboardTitle}>Kterer Dashboard</Text>
+                    <Pressable onPress={() => console.log('Pressed')}>
+                        <MaterialCommunityIcons name="bell-outline" size={24} color="#BF1E2E" style={styles.bellIcon} />
+                    </Pressable>
+                </View>
+
+                <FlatList
+                    data={[]}
+                    keyExtractor={(item, index) => index.toString()}
+                    renderItem={null}
+                    ListHeaderComponent={() => (
+                        <>
+                            <View style={styles.sectionContainer}>
+                                <Text style={styles.sectionTitle}>Post Food</Text>
+                                <TextInput
+                                    placeholder="Name of Food (Try to keep it short & sweet!)"
+                                    placeholderTextColor="#969696"
+                                    defaultValue={name}
+                                    onChangeText={(val) => nameInput = val}
+                                    onEndEditing={() => setName(nameInput)}
+                                    style={styles.textInput}
+                                />
+                            </View>
+
+                            <View style={styles.sectionContainer}>
+                                <Text style={styles.sectionTitle}>Upload Photos</Text>
+                                <Text style={styles.sectionSubtitle}>You may choose up to 3 photos.</Text>
+                            </View>
+
+                            <View style={styles.photoButtonsContainer}>
+                                <Pressable style={({ pressed }) => [styles.photoButton, pressed && styles.pressed]} onPress={pickImage}>
+                                    <FontAwesome name="image" size={24} color="black" />
+                                    <Text style={styles.photoButtonText}>From Photos</Text>
+                                </Pressable>
+
+                                <Pressable style={({ pressed }) => [styles.photoButton, pressed && styles.pressed]} onPress={takePhoto}>
+                                    <Feather name="camera" size={24} color="black" />
+                                    <Text style={styles.photoButtonText}>From Camera</Text>
+                                </Pressable>
+                            </View>
+
+                            <View style={{ marginTop: 20, flexDirection: 'row', justifyContent: 'space-between', marginHorizontal: 20 }}>
+                                {selectedImages.map((uri, index) => (
+                                    <Pressable key={index} onLongPress={() => removeImage(uri)}>
+                                        <Image source={{ uri }} style={styles.image} />
+                                    </Pressable>
+                                ))}
+                            </View>
+
+                            {/* Dropdowns and Input Fields */}
+                            {/* Halal Dropdown */}
+                            <View style={[styles.sectionContainer, { zIndex: halalOpen ? 3000 : 0 }]}>
+                                <Text style={styles.sectionTitle}>Is this item Halal?</Text>
+                                <Text style={styles.sectionSubtitle}>Pork, Alcohol, and Gelatin are NOT halal.</Text>
+                                <DropDownPicker
+                                    open={halalOpen}
+                                    value={halalValue}
+                                    items={halalOptions}
+                                    setOpen={(open) => {
+                                        handleDropdownOpen('halal');
+                                        setHalalOpen(open);
+                                    }}
+                                    setValue={setHalalValue}
+                                    placeholder="Select Halal Option"
+                                    style={styles.dropDown}
+                                    textStyle={styles.dropDownText}
+                                    dropDownContainerStyle={styles.dropDownContainer}
+                                />
+                            </View>
+
+                            {/* Kosher Dropdown */}
+                            <View style={[styles.sectionContainer, { zIndex: kosherOpen ? 2000 : 0 }]}>
+                                <Text style={styles.sectionTitle}>Is this item Kosher?</Text>
+                                <Text style={styles.sectionSubtitle}>Kosher is food prepared according to Jewish dietary guidelines.</Text>
+                                <DropDownPicker
+                                    open={kosherOpen}
+                                    value={kosherValue}
+                                    items={kosherOptions}
+                                    setOpen={(open) => {
+                                        handleDropdownOpen('kosher');
+                                        setKosherOpen(open);
+                                    }}
+                                    setValue={setKosherValue}
+                                    placeholder="Yes"
+                                    style={styles.dropDown}
+                                    textStyle={styles.dropDownText}
+                                    dropDownContainerStyle={styles.dropDownContainer}
+                                />
+                            </View>
+
+                            {/* Vegetarian/Vegan Dropdown */}
+                            <View style={[styles.sectionContainer, { zIndex: vegetarianOpen ? 1800 : 0 }]}>
+                                <Text style={styles.sectionTitle}>Vegetarian/Vegan?</Text>
+                                <DropDownPicker
+                                    open={vegetarianOpen}
+                                    value={vegetarianValue}
+                                    items={vegetarianOptions}
+                                    setOpen={(open) => {
+                                        handleDropdownOpen('vegetarian');
+                                        setVegetarianOpen(open);
+                                    }}
+                                    setValue={setVegetarianValue}
+                                    placeholder="Select Option"
+                                    style={styles.dropDown}
+                                    textStyle={styles.dropDownText}
+                                    dropDownContainerStyle={styles.dropDownContainer}
+                                />
+                            </View>
+
+                            {/* Desserts/Drinks Dropdown */}
+                            <View style={[styles.sectionContainer, { zIndex: dessertsOpen ? 1700 : 0 }]}>
+                                <Text style={styles.sectionTitle}>Desserts/Drinks?</Text>
+                                <DropDownPicker
+                                    open={dessertsOpen}
+                                    value={dessertsValue}
+                                    items={dessertOptions}
+                                    setOpen={(open) => {
+                                        handleDropdownOpen('desserts');
+                                        setDessertsOpen(open);
+                                    }}
+                                    setValue={setDessertsValue}
+                                    placeholder="Select Option"
+                                    style={styles.dropDown}
+                                    textStyle={styles.dropDownText}
+                                    dropDownContainerStyle={styles.dropDownContainer}
+                                />
+                            </View>
+
+                            {/* Meat Dropdown */}
+                            <View style={[styles.sectionContainer, { zIndex: meatOpen ? 1500 : 0 }]}>
+                                <Text style={styles.sectionTitle}>Type of Meat</Text>
+                                <DropDownPicker
+                                    open={meatOpen}
+                                    value={meatValue}
+                                    items={meatOptions}
+                                    setOpen={(open) => {
+                                        handleDropdownOpen('meat');
+                                        setMeatOpen(open);
+                                    }}
+                                    setValue={setMeatValue}
+                                    placeholder="Chicken"
+                                    style={styles.dropDown}
+                                    textStyle={styles.dropDownText}
+                                    dropDownContainerStyle={styles.dropDownContainer}
+                                />
+                            </View>
+
+                            {/* Ethnicity Dropdown */}
+                            <View style={[styles.sectionContainer, { zIndex: ethnicityOpen ? 1000 : 0 }]}>
+                                <Text style={styles.sectionTitle}>Ethnic Type</Text>
+                                <DropDownPicker
+                                    open={ethnicityOpen}
+                                    value={ethnicityValue}
+                                    items={ethnicityOptions}
+                                    setOpen={(open) => {
+                                        handleDropdownOpen('ethnicity');
+                                        setEthnicityOpen(open);
+                                    }}
+                                    setValue={setEthnicityValue}
+                                    placeholder="Indian"
+                                    style={styles.dropDown}
+                                    textStyle={styles.dropDownText}
+                                    dropDownContainerStyle={styles.dropDownContainer}
+                                />
+                            </View>
+
+                            {/* Time Dropdown */}
+                            <View style={[styles.sectionContainer, { zIndex: timeOpen ? 500 : 0 }]}>
+                                <Text style={styles.sectionTitle}>Preparation & Delivery Time</Text>
+                                <Text style={styles.sectionSubtitle}>Important! This will help determine when your food will be picked up for delivery so make it as accurate as possible.</Text>
+                                <DropDownPicker
+                                    open={timeOpen}
+                                    value={timeValue}
+                                    items={timeOptions}
+                                    setOpen={(open) => {
+                                        handleDropdownOpen('time');
+                                        setTimeOpen(open);
+                                    }}
+                                    setValue={setTimeValue}
+                                    placeholder="Select Time"
+                                    style={styles.dropDown}
+                                    textStyle={styles.dropDownText}
+                                    dropDownContainerStyle={styles.dropDownContainer}
+                                />
+                            </View>
+
+                            <View style={styles.sectionContainer}>
+                                <Text style={styles.sectionTitle}>Description</Text>
+                                <TextInput
+                                    placeholder="Tell us a little bit about your food item. Is it perfect for dinner? Lunch? Is it good for 3 people? Let customers know!"
+                                    placeholderTextColor="#969696"
+                                    multiline
+                                    defaultValue={description}
+                                    onChangeText={(val) => descriptionInput = val}
+                                    onEndEditing={() => setDescription(descriptionInput)}
+                                    style={styles.textArea}
+                                />
+                            </View>
+
+                            <View style={styles.sectionContainer}>
+                                <Text style={styles.sectionTitle}>Ingredients</Text>
+                                <TextInput
+                                    placeholder="Please include all ingredients and enter each ingredient on a new line."
+                                    placeholderTextColor="#969696"
+                                    multiline
+                                    defaultValue={ingredients}
+                                    onChangeText={(val) => ingredientsInput = val}
+                                    onEndEditing={() => setIngredients(ingredientsInput)}
+                                    style={styles.textArea}
+                                />
+                            </View>
+
+                            {/* UI for size selections */}
+                            <View style={styles.sectionContainer}>
+                                <Text style={styles.sectionTitle}>What size/s are you selling?</Text>
+                                <View style={{ flexDirection: 'row', justifyContent: 'space-around', marginTop: 10 }}>
+                                    <Pressable style={[styles.sizeButton, smallActive && styles.activeSize]} onPress={() => toggleSize('small')}>
+                                        <Text style={styles.sizeText}>Small</Text>
+                                    </Pressable>
+                                    <Pressable style={[styles.sizeButton, mediumActive && styles.activeSize]} onPress={() => toggleSize('medium')}>
+                                        <Text style={styles.sizeText}>Medium</Text>
+                                    </Pressable>
+                                    <Pressable style={[styles.sizeButton, largeActive && styles.activeSize]} onPress={() => toggleSize('large')}>
+                                        <Text style={styles.sizeText}>Large</Text>
+                                    </Pressable>
+                                </View>
+
+                                {smallActive && (
+                                    <View style={styles.sizeInputContainer}>
+                                        <TextInput
+                                            placeholder="Price (Small)"
+                                            placeholderTextColor="#969696"
+                                            keyboardType="numeric"
+                                            defaultValue={smallPrice}
+                                            onChangeText={(val) => smallPriceInput = val}
+                                            onEndEditing={() => setSmallPrice(smallPriceInput)}
+                                            style={styles.textInput}
+                                        />
+                                        <TextInput
+                                            placeholder="Quantity"
+                                            placeholderTextColor="#969696"
+                                            keyboardType="numeric"
+                                            defaultValue={smallAmount}
+                                            onChangeText={(val) => smallAmountInput = val}
+                                            onEndEditing={() => setSmallAmount(smallAmountInput)}
+                                            style={styles.textInput}
+                                        />
+                                    </View>
+                                )}
+
+                                {mediumActive && (
+                                    <View style={styles.sizeInputContainer}>
+                                        <TextInput
+                                            placeholder="Price (Medium)"
+                                            placeholderTextColor="#969696"
+                                            keyboardType="numeric"
+                                            defaultValue={mediumPrice}
+                                            onChangeText={(val) => mediumPriceInput = val}
+                                            onEndEditing={() => setMediumPrice(mediumPriceInput)}
+                                            style={styles.textInput}
+                                        />
+                                        <TextInput
+                                            placeholder="Quantity"
+                                            placeholderTextColor="#969696"
+                                            keyboardType="numeric"
+                                            defaultValue={mediumAmount}
+                                            onChangeText={(val) => mediumAmountInput = val}
+                                            onEndEditing={() => setMediumAmount(mediumAmountInput)}
+                                            style={styles.textInput}
+                                        />
+                                    </View>
+                                )}
+
+                                {largeActive && (
+                                    <View style={styles.sizeInputContainer}>
+                                        <TextInput
+                                            placeholder="Price (Large)"
+                                            placeholderTextColor="#969696"
+                                            keyboardType="numeric"
+                                            defaultValue={largePrice}
+                                            onChangeText={(val) => largePriceInput = val}
+                                            onEndEditing={() => setLargePrice(largePriceInput)}
+                                            style={styles.textInput}
+                                        />
+                                        <TextInput
+                                            placeholder="Quantity"
+                                            placeholderTextColor="#969696"
+                                            keyboardType="numeric"
+                                            defaultValue={largeAmount}
+                                            onChangeText={(val) => largeAmountInput = val}
+                                            onEndEditing={() => setLargeAmount(largeAmountInput)}
+                                            style={styles.textInput}
+                                        />
+                                    </View>
+                                )}
+                            </View>
+                        </>
+                    )}
+                />
+                <KBottomButton title="Post Food" onPress={handleUpdateFood} />
             </View>
-
-            <ScrollView style={{ flex: 1, marginVertical: 50 }}>
-                <View style={{ marginTop: 20, flexDirection: 'column', justifyContent: 'space-between', alignItems: 'flex-start', marginHorizontal: 20 }}>
-                    <Text style={{ fontSize: 14, fontFamily: 'TT Chocolates Trial Bold', color: '#000000' }}>Post Food</Text>
-                    <TextInput
-                        placeholder='Name of Food (Try to keep it short & sweet!)'
-                        placeholderTextColor='#969696'
-                        style={{ fontSize: 12, fontFamily: 'TT Chocolates Trial Regular', color: '#000000', marginTop: 10, backgroundColor: '#F0F0F0', height: 50, width: '100%', borderRadius: 10, paddingHorizontal: 20 }}
-                    />
-                </View>
-
-
-                <View style={{ marginTop: 20, flexDirection: 'column', justifyContent: 'space-between', alignItems: 'flex-start', marginHorizontal: 20 }}>
-                    <Text style={{ fontSize: 14, fontFamily: 'TT Chocolates Trial Bold', color: '#000000' }}>Upload Photos</Text>
-                    <Text style={{ fontSize: 12, fontFamily: 'TT Chocolates Trial Regular', color: '#000000', marginTop: 10 }}>You may choose up to 3 photos.</Text>
-                </View>
-
-                <View style={styles.container}>
-                    <Pressable
-                        style={({ pressed }) => [
-                            styles.rectangle2,
-                            pressed && styles.pressed, // Apply style when pressed
-                        ]}
-                    >
-                        <FontAwesome name="image" size={24} color="black" />
-                        <Text style={styles.text}>From Photos</Text>
-                    </Pressable>
-
-                    <Pressable
-                        style={({ pressed }) => [
-                            styles.rectangle2,
-                            pressed && styles.pressed, // Apply style when pressed
-                        ]}
-                    >
-                        <Feather name="camera" size={24} color="black" />
-                        <Text style={styles.text}>From Camera</Text>
-                    </Pressable>
-                </View>
-
-                <View style={{ marginTop: 50, flexDirection: 'row', justifyContent: 'space-around', alignItems: 'flex-start' }}>
-                    <Entypo name="plus" size={40} color="#969696" />
-                    <Entypo name="plus" size={40} color="#969696" />
-                    <Entypo name="plus" size={40} color="#969696" />
-                </View>
-
-                <View style={{ marginTop: 20, flexDirection: 'column', justifyContent: 'space-between', alignItems: 'flex-start', marginHorizontal: 20 }}>
-                    <Text style={{ fontSize: 14, fontFamily: 'TT Chocolates Trial Bold', color: '#000000', marginBottom: 10 }}>What size/s are you selling?</Text>
-
-                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 10, alignContent: 'center', gap: 10 }}>
-                        <View style={{ flexDirection: 'column', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                            <Pressable style={{ backgroundColor: `rgba(191,30,46,0.15)`, borderRadius: 10, paddingHorizontal: 20, paddingVertical: 10 }}>
-                                <Text style={{ fontSize: 12, fontFamily: 'TT Chocolates Trial Regular', color: '#BF1E2E' }}>Small</Text>
-                            </Pressable>
-
-                            <TextInput
-                                placeholder='Price (Small)'
-                                placeholderTextColor='#969696'
-                                style={{ fontSize: 12, fontFamily: 'TT Chocolates Trial Regular', color: '#000000', marginTop: 10, backgroundColor: '#F0F0F0', height: 50, width: 'auto', borderRadius: 10, paddingHorizontal: 10 }}
-                            />
-                            <TextInput
-                                placeholder='Quantity'
-                                placeholderTextColor='#969696'
-                                style={{ fontSize: 12, fontFamily: 'TT Chocolates Trial Regular', color: '#000000', marginTop: 10, backgroundColor: '#F0F0F0', height: 50, width: 'auto', borderRadius: 10, paddingHorizontal: 10 }}
-                            />
-                        </View>
-                        <View style={{ flexDirection: 'column', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                            <Pressable style={{ backgroundColor: `rgba(191,30,46,0.15)`, borderRadius: 10, paddingHorizontal: 20, paddingVertical: 10 }}>
-                                <Text style={{ fontSize: 12, fontFamily: 'TT Chocolates Trial Regular', color: '#BF1E2E' }}>Medium</Text>
-                            </Pressable>
-
-                            <TextInput
-                                placeholder='Price (Medium)'
-                                placeholderTextColor='#969696'
-                                style={{ fontSize: 12, fontFamily: 'TT Chocolates Trial Regular', color: '#000000', marginTop: 10, backgroundColor: '#F0F0F0', height: 50, width: 'auto', borderRadius: 10, paddingHorizontal: 10 }}
-                            />
-                            <TextInput
-                                placeholder='Quantity'
-                                placeholderTextColor='#969696'
-                                style={{ fontSize: 12, fontFamily: 'TT Chocolates Trial Regular', color: '#000000', marginTop: 10, backgroundColor: '#F0F0F0', height: 50, width: 'auto', borderRadius: 10, paddingHorizontal: 10 }}
-                            />
-                        </View>
-                        <View style={{ flexDirection: 'column', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                            <Pressable style={{ backgroundColor: `rgba(191,30,46,0.15)`, borderRadius: 10, paddingHorizontal: 20, paddingVertical: 10 }}>
-                                <Text style={{ fontSize: 12, fontFamily: 'TT Chocolates Trial Regular', color: '#BF1E2E' }}>Large</Text>
-                            </Pressable>
-
-                            <TextInput
-                                placeholder='Price (Large)'
-                                placeholderTextColor='#969696'
-                                style={{ fontSize: 12, fontFamily: 'TT Chocolates Trial Regular', color: '#000000', marginTop: 10, backgroundColor: '#F0F0F0', height: 50, width: 'auto', borderRadius: 10, paddingHorizontal: 10 }}
-                            />
-                            <TextInput
-                                placeholder='Quantity'
-                                placeholderTextColor='#969696'
-                                style={{ fontSize: 12, fontFamily: 'TT Chocolates Trial Regular', color: '#000000', marginTop: 10, backgroundColor: '#F0F0F0', height: 50, width: 'auto', borderRadius: 10, paddingHorizontal: 10 }}
-                            />
-                        </View>
-                    </View>
-                </View>
-
-                <View style={{ marginTop: 20, flexDirection: 'column', justifyContent: 'space-between', alignItems: 'flex-start', marginHorizontal: 20 }}>
-                    <Text style={{ fontSize: 14, fontFamily: 'TT Chocolates Trial Bold', color: '#000000' }}>Description</Text>
-                    <TextInput
-                        placeholder='Tell us a little bit about your food item. Is it perfect for dinner? Lunch? Is it good for 3 people? Let customers know!'
-                        placeholderTextColor='#969696'
-                        multiline={true}
-                        style={{ fontSize: 12, fontFamily: 'TT Chocolates Trial Regular', color: '#000000', marginTop: 10, backgroundColor: '#F0F0F0', height: 150, width: '100%', borderRadius: 10, paddingHorizontal: 20 }}
-                    />
-                </View>
-
-                <View style={{ marginTop: 20, flexDirection: 'column', justifyContent: 'space-between', alignItems: 'flex-start', marginHorizontal: 20 }}>
-                    <Text style={{ fontSize: 14, fontFamily: 'TT Chocolates Trial Bold', color: '#000000' }}>Ingredients</Text>
-                    <TextInput
-                        placeholder='Please include all ingredients and enter each ingredient on a new line.'
-                        placeholderTextColor='#969696'
-                        multiline={true}
-                        style={{ fontSize: 12, fontFamily: 'TT Chocolates Trial Regular', color: '#000000', marginTop: 10, backgroundColor: '#F0F0F0', height: 150, width: '100%', borderRadius: 10, paddingHorizontal: 20 }}
-                    />
-                </View>
-
-                <View style={{ marginTop: 20, flexDirection: 'column', justifyContent: 'space-between', alignItems: 'flex-start', marginHorizontal: 20, flex: 1 }}>
-                    <Text style={{ fontSize: 14, fontFamily: 'TT Chocolates Trial Bold', color: '#000000' }}>Is this item Halal?</Text>
-                    <Text style={{ fontSize: 12, fontFamily: 'TT Chocolates Trial Regular', color: '#000000', marginTop: 10, }}>Pork, Alcohol, and Gelatin are NOT halal.</Text>
-                    <DropDownPicker
-                        open={halalOpen}
-                        value={halalValue}
-                        items={halalOptions}
-                        setOpen={setHalalOpen}
-                        setValue={setHalalValue}
-                        setItems={setHalalOptions}
-                        placeholder={'Halal - Hand Slaughtered'}
-                        showArrowIcon={true}
-                        style={{
-                            backgroundColor: '#fff',
-                            marginTop: 10,
-                            height: 'auto',
-                            borderColor: '#EEEEEE',
-                            flex: 1
-                        }}
-                        textStyle={{
-                            fontSize: 12,
-                            fontFamily: 'TT Chocolates Trial Medium',
-                            color: '#000000',
-                            textAlign: 'center',
-                        }}
-                        dropDownContainerStyle={{
-                            borderColor: '#EEEEEE',
-                        }}
-                        listItemLabelStyle={{
-                            fontSize: 12,
-                            fontFamily: 'TT Chocolates Trial Medium',
-                            color: '#000000',
-                            textAlign: 'center',
-                        }}
-                        itemSeparator={true}
-                        itemSeparatorStyle={{ height: 1, backgroundColor: '#EEEEEE', marginHorizontal: 10 }}
-                    />
-                </View>
-
-                <View style={{ marginTop: 20, flexDirection: 'column', justifyContent: 'space-between', alignItems: 'flex-start', marginHorizontal: 20, flex: 1 }}>
-                    <Text style={{ fontSize: 14, fontFamily: 'TT Chocolates Trial Bold', color: '#000000' }}>Is this item Kosher?</Text>
-                    <Text style={{ fontSize: 12, fontFamily: 'TT Chocolates Trial Regular', color: '#000000', marginTop: 10, }}>Kosher is food prepared according to the requirements of Jewish law.</Text>
-                    <DropDownPicker
-                        open={kosherOpen}
-                        value={kosherValue}
-                        items={kosherOptions}
-                        setOpen={setKosherOpen}
-                        setValue={setKosherValue}
-                        setItems={setKosherOptions}
-                        placeholder={'Yes'}
-                        showArrowIcon={true}
-                        style={{
-                            backgroundColor: '#fff',
-                            marginTop: 10,
-                            height: 'auto',
-                            borderColor: '#EEEEEE',
-                            flex: 1
-                        }}
-                        textStyle={{
-                            fontSize: 12,
-                            fontFamily: 'TT Chocolates Trial Medium',
-                            color: '#000000',
-                            textAlign: 'center',
-                        }}
-                        dropDownContainerStyle={{
-                            borderColor: '#EEEEEE',
-                        }}
-                        listItemLabelStyle={{
-                            fontSize: 12,
-                            fontFamily: 'TT Chocolates Trial Medium',
-                            color: '#000000',
-                            textAlign: 'center',
-                        }}
-                        itemSeparator={true}
-                        itemSeparatorStyle={{ height: 1, backgroundColor: '#EEEEEE', marginHorizontal: 10 }}
-                    />
-                </View>
-
-                <View style={{ marginTop: 20, flexDirection: 'column', justifyContent: 'space-between', alignItems: 'flex-start', marginHorizontal: 20, flex: 1 }}>
-                    <Text style={{ fontSize: 14, fontFamily: 'TT Chocolates Trial Bold', color: '#000000' }}>Does this item contain nuts?</Text>
-                    <DropDownPicker
-                        open={kosherOpen}
-                        value={kosherValue}
-                        items={kosherOptions}
-                        setOpen={setKosherOpen}
-                        setValue={setKosherValue}
-                        setItems={setKosherOptions}
-                        placeholder={'Yes'}
-                        showArrowIcon={true}
-                        style={{
-                            backgroundColor: '#fff',
-                            marginTop: 10,
-                            height: 'auto',
-                            borderColor: '#EEEEEE',
-                            flex: 1
-                        }}
-                        textStyle={{
-                            fontSize: 12,
-                            fontFamily: 'TT Chocolates Trial Medium',
-                            color: '#000000',
-                            textAlign: 'center',
-                        }}
-                        dropDownContainerStyle={{
-                            borderColor: '#EEEEEE',
-                        }}
-                        listItemLabelStyle={{
-                            fontSize: 12,
-                            fontFamily: 'TT Chocolates Trial Medium',
-                            color: '#000000',
-                            textAlign: 'center',
-                        }}
-                        itemSeparator={true}
-                        itemSeparatorStyle={{ height: 1, backgroundColor: '#EEEEEE', marginHorizontal: 10 }}
-                    />
-                </View>
-
-                <View style={{ marginTop: 20, flexDirection: 'column', justifyContent: 'space-between', alignItems: 'flex-start', marginHorizontal: 20, flex: 1 }}>
-                    <Text style={{ fontSize: 14, fontFamily: 'TT Chocolates Trial Bold', color: '#000000' }}>Type of Meat</Text>
-                    <DropDownPicker
-                        open={meatOpen}
-                        value={meatValue}
-                        items={meatOptions}
-                        setOpen={setMeatOpen}
-                        setValue={setMeatValue}
-                        setItems={setMeatOptions}
-                        placeholder={'Chicken'}
-                        showArrowIcon={true}
-                        style={{
-                            backgroundColor: '#fff',
-                            marginTop: 10,
-                            height: 'auto',
-                            borderColor: '#EEEEEE',
-                            flex: 1
-                        }}
-                        textStyle={{
-                            fontSize: 12,
-                            fontFamily: 'TT Chocolates Trial Medium',
-                            color: '#000000',
-                            textAlign: 'center',
-                        }}
-                        dropDownContainerStyle={{
-                            borderColor: '#EEEEEE',
-                        }}
-                        listItemLabelStyle={{
-                            fontSize: 12,
-                            fontFamily: 'TT Chocolates Trial Medium',
-                            color: '#000000',
-                            textAlign: 'center',
-                        }}
-                        itemSeparator={true}
-                        itemSeparatorStyle={{ height: 1, backgroundColor: '#EEEEEE', marginHorizontal: 10 }}
-                    />
-                </View>
-
-                <View style={{ marginTop: 20, flexDirection: 'column', justifyContent: 'space-between', alignItems: 'flex-start', marginHorizontal: 20, flex: 1 }}>
-                    <Text style={{ fontSize: 14, fontFamily: 'TT Chocolates Trial Bold', color: '#000000' }}>Ethnic Type</Text>
-                    <DropDownPicker
-                        open={ethnicityOpen}
-                        value={ethnicityValue}
-                        items={ethnicityOptions}
-                        setOpen={setEthnicityOpen}
-                        setValue={setEthnicityValue}
-                        setItems={setEthnicityOptions}
-                        placeholder={'Indian'}
-                        showArrowIcon={true}
-                        style={{
-                            backgroundColor: '#fff',
-                            marginTop: 10,
-                            height: 'auto',
-                            borderColor: '#EEEEEE',
-                            flex: 1
-                        }}
-                        textStyle={{
-                            fontSize: 12,
-                            fontFamily: 'TT Chocolates Trial Medium',
-                            color: '#000000',
-                            textAlign: 'center',
-                        }}
-                        dropDownContainerStyle={{
-                            borderColor: '#EEEEEE',
-                        }}
-                        listItemLabelStyle={{
-                            fontSize: 12,
-                            fontFamily: 'TT Chocolates Trial Medium',
-                            color: '#000000',
-                            textAlign: 'center',
-                        }}
-                        itemSeparator={true}
-                        itemSeparatorStyle={{ height: 1, backgroundColor: '#EEEEEE', marginHorizontal: 10 }}
-                    />
-                </View>
-
-                <View style={{
-                    marginTop: 20, flexDirection: 'column', justifyContent: 'space-between', alignItems: 'flex-start', marginHorizontal: 20, flex: 1, gap: 10
-                }}>
-                    <Text style={{ fontSize: 14, fontFamily: 'TT Chocolates Trial Bold', color: '#000000' }}>Preparation & Delivery Time</Text>
-                    <Text style={{ fontSize: 12, fontFamily: 'TT Chocolates Trial Medium', color: '#969696' }}>Important! This will help determine when your food will be picked up for delivery so make it as accurate as you can!</Text>
-                    <Text style={{ fontSize: 12, fontFamily: 'TT Chocolates Trial Medium', color: '#000000' }}>How long do you need to prepare/make this item?</Text>
-                    <DropDownPicker
-                        open={timeOpen}
-                        value={timeValue}
-                        items={timeOptions}
-                        setOpen={setTimeOpen}
-                        setValue={setTimeValue}
-                        setItems={setTimeOptions}
-                        placeholder={'35 minutes'}
-                        showArrowIcon={true}
-                        style={{
-                            backgroundColor: '#fff',
-                            marginTop: 10,
-                            height: 'auto',
-                            borderColor: '#EEEEEE',
-                            flex: 1
-                        }}
-                        textStyle={{
-                            fontSize: 12,
-                            fontFamily: 'TT Chocolates Trial Medium',
-                            color: '#000000',
-                            textAlign: 'center',
-                        }}
-                        dropDownContainerStyle={{
-                            borderColor: '#EEEEEE',
-                        }}
-                        listItemLabelStyle={{
-                            fontSize: 12,
-                            fontFamily: 'TT Chocolates Trial Medium',
-                            color: '#000000',
-                            textAlign: 'center',
-                        }}
-                        itemSeparator={true}
-                        itemSeparatorStyle={{ height: 1, backgroundColor: '#EEEEEE', marginHorizontal: 10 }}
-                    />
-                </View>
-
-            </ScrollView>
-
-            <KBottomButton title="Post Food" onPress={() => { console.log("proceed to payment"); }} />
-        </View>
-    )
-}
+        </KeyboardAvoidingView>
+    );
+};
 
 const styles = StyleSheet.create({
-    backButton: {
-        position: 'absolute',
-        top: 50,
-        left: 30,
-        zIndex: 2,
-    },
-    starContainer: {
+    headerContainer: {
         flexDirection: 'row',
-        justifyContent: 'center',
         alignItems: 'center',
+        justifyContent: 'space-between',
+        marginTop: 70,
+        marginHorizontal: 10,
     },
-    star: {
-        marginHorizontal: 4, // Space between stars
+    dashboardTitle: {
+        fontSize: 15,
+        fontFamily: 'TT Chocolates Trial Bold',
+        color: '#000000',
     },
-    rectangle: {
-        borderWidth: 1, // Equivalent to 'border: 1px solid #DFDFDF'
-        borderColor: '#DFDFDF', // Border color
-        borderRadius: 3, // Border radius in pixels
+    bellIcon: {
+        marginRight: 20,
     },
-    rectangle2: {
-        borderWidth: 1, // Equivalent to 'border: 1px solid #EEEEEE'
-        borderColor: '#EEEEEE', // Border color
-        borderRadius: 6, // Border radius in pixels
-        backgroundColor: '#FFFFFF', // Background color
-        // Box-shadow properties for iOS
-        shadowColor: 'rgba(216, 216, 216, 0.5)', // Shadow color
-        shadowOffset: { width: 0, height: 2 }, // Shadow offset for horizontal and vertical
-        // shadowOpacity: 1, // Shadow opacity
-        // shadowRadius: 4, // Shadow radius
-        // Elevation property for Android
-        elevation: 3, // Provides shadow on Android,
-        flexDirection: 'row',
-        padding: 10,
-        alignItems: 'flex-start',
-
+    sectionContainer: {
+        marginTop: 20,
+        marginHorizontal: 20,
+        marginBottom: 20,
     },
-    container: {
+    sectionTitle: {
+        fontSize: 14,
+        fontFamily: 'TT Chocolates Trial Bold',
+        color: '#000000',
+    },
+    sectionSubtitle: {
+        fontSize: 12,
+        fontFamily: 'TT Chocolates Trial Regular',
+        color: '#969696',
+        marginTop: 10,
+    },
+    textInput: {
+        fontSize: 12,
+        fontFamily: 'TT Chocolates Trial Regular',
+        color: '#000000',
+        marginTop: 10,
+        backgroundColor: '#F0F0F0',
+        height: 50,
+        width: '100%',
+        borderRadius: 10,
+        paddingHorizontal: 20,
+    },
+    textArea: {
+        fontSize: 12,
+        fontFamily: 'TT Chocolates Trial Regular',
+        color: '#000000',
+        marginTop: 10,
+        backgroundColor: '#F0F0F0',
+        height: 150,
+        width: '100%',
+        borderRadius: 10,
+        paddingHorizontal: 20,
+    },
+    photoButtonsContainer: {
         marginTop: 20,
         flexDirection: 'row',
         justifyContent: 'space-around',
         alignItems: 'flex-start',
         marginHorizontal: 20,
     },
-    pressed: {
-        backgroundColor: '#EFEFF0', // Change color on press
+    photoButton: {
+        borderWidth: 1,
+        borderColor: '#EEEEEE',
+        borderRadius: 6,
+        backgroundColor: '#FFFFFF',
+        shadowColor: 'rgba(216, 216, 216, 0.5)',
+        shadowOffset: { width: 0, height: 2 },
+        elevation: 3,
+        flexDirection: 'row',
+        padding: 10,
+        alignItems: 'flex-start',
     },
-    text: {
+    photoButtonText: {
         fontSize: 12,
         fontFamily: 'TT Chocolates Trial Medium',
         color: '#000000',
         marginTop: 10,
         marginLeft: 10,
     },
-    buttonPressed: {
-        backgroundColor: '#EFEFF0', // Color when pressed
+    pressed: {
+        backgroundColor: '#EFEFF0',
     },
-    textPressed: {
-        color: '#969696', // Text color when pressed
+    image: {
+        width: 80,
+        height: 80,
+        borderRadius: 10,
+        marginRight: 10,
+    },
+    dropDown: {
+        backgroundColor: '#fff',
+        marginTop: 10,
+        height: 'auto',
+        borderColor: '#EEEEEE',
+    },
+    dropDownText: {
+        fontSize: 12,
+        fontFamily: 'TT Chocolates Trial Medium',
+        color: '#000000',
+        textAlign: 'center',
+    },
+    dropDownContainer: {
+        borderColor: '#EEEEEE',
+    },
+    sizeButton: {
+        padding: 10,
+        borderRadius: 10,
+        borderWidth: 1,
+        borderColor: '#dcdcdc',
+    },
+    activeSize: {
+        backgroundColor: '#d1d1d1',
+    },
+    sizeText: {
+        fontSize: 14,
+        color: '#000',
+    },
+    sizeInputContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginTop: 10,
     },
 });
+
+export default Index;

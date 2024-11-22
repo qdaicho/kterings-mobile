@@ -30,6 +30,8 @@ const SignInWithOAuth: React.FC<SignInWithOAuthProps> = ({ title = 'Sign in with
       if (createdSessionId) {
         if (setActive) {
           setActive({ session: createdSessionId });
+
+          
           router.navigate("/homepage/");
         } else {
           throw new Error("setActive is not defined");
