@@ -149,6 +149,7 @@ export default function App() {
 
     return (
         <View style={styles.container}>
+            
 
             <SignedIn>
                 <RBSheet
@@ -216,7 +217,7 @@ export default function App() {
                                         onPress={() => {
                                             refRBSheet.current && refRBSheet.current.close();
                                             // signOut();
-                                            router.push("/trackorder/");
+                                            router.push("/trackorder");
                                         }}
                                         buttonStyle={{
                                             marginTop: 20,
@@ -265,7 +266,7 @@ export default function App() {
                                 secureTextEntry={false}
                                 autoCorrect={false}
                                 // textContentType="password"
-                                onFocus={() => router.navigate('/search/')}
+                                onFocus={() => router.push('/search')}
                             />
                         </View>
                     </View>
@@ -304,7 +305,7 @@ export default function App() {
                                 {item === 'nearYou' && (
                                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
                                         <Text style={{ fontSize: 15, fontFamily: 'TT Chocolates Trial Bold', color: '#000000' }}>Near You</Text>
-                                        <Pressable onPress={() => router.navigate('/nearyou/')}>
+                                        <Pressable onPress={() => router.navigate('/nearyou')}>
                                             <Text style={{ fontSize: 12, fontFamily: 'TT Chocolates Trial Medium', color: '#BF1E2E' }}>See All</Text>
                                         </Pressable>
                                     </View>

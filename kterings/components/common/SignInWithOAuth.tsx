@@ -1,61 +1,61 @@
-import React from 'react';
-import { Pressable, Text, StyleSheet, StyleProp, ViewStyle, TextStyle, Image, View } from 'react-native';
-// import GoogleLogo from '@/assets/images/GoogleLogo';
+import React, { useCallback } from 'react';
+import { Pressable, Text, StyleSheet, StyleProp, ViewStyle, TextStyle, Image } from 'react-native';
 import * as WebBrowser from "expo-web-browser";
-import { useOAuth, useSignIn } from "@clerk/clerk-expo";
+import { useOAuth } from "@clerk/clerk-expo";
 import { useWarmUpBrowser } from "@hooks/useWarmUpBrowser";
 import { router } from 'expo-router';
 
+// Ensure auth session is handled
+WebBrowser.maybeCompleteAuthSession();
+
 interface SignInWithOAuthProps {
-  title: string;
+  title?: string;
   buttonStyle?: StyleProp<ViewStyle>;
   textStyle?: StyleProp<TextStyle>;
 }
 
-WebBrowser.maybeCompleteAuthSession();
-
-const SignInWithOAuth: React.FC<SignInWithOAuthProps> = ({ title = 'Sign in with Google', buttonStyle, textStyle }) => {
+const SignInWithOAuth: React.FC<SignInWithOAuthProps> = ({ 
+  title = 'Sign in with Google', 
+  buttonStyle, 
+  textStyle 
+}) => {
+  // Warm up browser for better performance
   useWarmUpBrowser();
 
-  const { startOAuthFlow } = useOAuth({ strategy: "oauth_google" });
+  const { startOAuthFlow } = useOAuth({ 
+    strategy: "oauth_google",
+    redirectUrl: 'https://clerk.kterings.com/v1/oauth_callback' // Add your redirect URL here
+  });
 
-  const onPress = React.useCallback(async () => {
-    // router.navigate("/homepage/");
-    // console.log("hello");
-
+  const handleSignIn = useCallback(async () => {
     try {
-      const { createdSessionId, signIn, signUp, setActive } =
-        await startOAuthFlow();
+      const { createdSessionId, setActive } = await startOAuthFlow();
 
-      if (createdSessionId) {
-        if (setActive) {
-          setActive({ session: createdSessionId });
-
-          
-          router.navigate("/homepage/");
-        } else {
-          throw new Error("setActive is not defined");
-        }
-      } else {
-        // Use signIn or signUp for next steps such as MFA
+      if (createdSessionId && setActive) {
+        await setActive({ session: createdSessionId });
+        router.replace("/homepage"); // Using replace instead of navigate to prevent going back
       }
-    } catch (err: any) {
-      console.error("An error occurred during OAuth flow:", err.errors[0].longMessage);
-      // Handle the error appropriately, e.g., display a user-friendly message
+    } catch (err) {
+      console.error("OAuth Error:", err);
+      // You might want to show an error message to the user
+      // Alert.alert("Sign in failed", "Please try again later");
     }
-  }, []);
-
+  }, [startOAuthFlow]);
 
   return (
     <Pressable
       style={({ pressed }) => [
         styles.container,
         buttonStyle,
-        pressed && styles.pressedStyle, // Apply the pressed style when pressed
+        pressed && styles.pressedStyle,
       ]}
-      onPress={onPress}
+      onPress={handleSignIn}
     >
-      <Image source={require('@assets/images/google_logo.png')} style={styles.logo} />
+      <Image 
+        source={require('@assets/images/google_logo.png')} 
+        style={styles.logo}
+        resizeMode="contain"
+      />
       <Text style={[styles.text, textStyle]}>{title}</Text>
     </Pressable>
   );
@@ -65,8 +65,6 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    height: 'auto',
-    width: 'auto',
     padding: 10,
     borderRadius: 19,
     backgroundColor: '#FFFFFF',
@@ -74,7 +72,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   pressedStyle: {
-    backgroundColor: '#EFEFF0', // Change to this color when pressed
+    backgroundColor: '#EFEFF0',
   },
   logo: {
     width: 32,
