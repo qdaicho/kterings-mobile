@@ -199,7 +199,7 @@ export default function Login() {
                     <Pressable onPress={() => router.navigate("/login")}>
                         <Text style={styles.haveAccount}>I Already Have an Account</Text>
                     </Pressable>
-                    <SignInWithOAuth title="Sign In with Google" buttonStyle={{ marginBottom: 70 }} />
+                    <SignInWithOAuth title="Sign In with Google" buttonStyle={{ marginBottom: 70 }} mode="signup" />
                     <Pressable style={{ position: 'absolute', bottom: 0, width: '100%', height: '7%' }}>
                         <View style={[styles.becomeKtererContainer, { height: '100%', justifyContent: 'center' }]}>
                             <Text style={styles.becomeAKterer}>Become a Kterer</Text>

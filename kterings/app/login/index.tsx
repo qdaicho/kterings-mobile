@@ -235,6 +235,7 @@ const LoginLayout = () => {
           <SignInWithOAuth
             title="Sign in with Google"
             buttonStyle={{ marginBottom: 50 }}
+            mode="signin"
           />
           <Pressable onPress={() => router.navigate("/signup")}>
             <Text style={styles.createAccount}>Create an Account</Text>
