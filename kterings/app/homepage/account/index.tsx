@@ -8,7 +8,8 @@ import BackButton from '@/components/common/BackButton';
 import { router } from 'expo-router';
 import KAddButton from '@/components/common/KAddButton';
 import { GestureHandlerRootView, Swipeable } from 'react-native-gesture-handler';
-import {User, AddressResponse, Address} from '@/hooks/types';
+import { User, AddressResponse, Address } from '@/hooks/types';
+import { useClerk, useUser } from '@clerk/clerk-expo';
 // interface Address {
 //   address: string;
 //   created_at: string;
@@ -44,6 +45,8 @@ const Account: React.FC = () => {
   const [image, setImage] = useState<string | null>(null);
   const [addresses, setAddresses] = useState<AddressResponse | null>(null);
   const [paymentMethods, setPaymentMethods] = useState([{ id: 'payment-1', label: 'Stripe Connected' }]);
+  const { signOut } = useClerk();
+  const { isLoaded, isSignedIn, user } = useUser()
 
   useEffect(() => {
     fetchUserDetails();
@@ -220,6 +223,38 @@ const Account: React.FC = () => {
     );
   };
 
+  const handleDeleteAccount = async (event: GestureResponderEvent) => {
+    try {
+      const token = await SecureStore.getItemAsync("token");
+      if (!token) throw new Error("Token not found");
+
+      const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/user`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) throw new Error(response.statusText);
+
+      try {
+        console.log("//", user?.deleteSelfEnabled);
+        user?.delete();
+      } catch (e) {
+        console.error('Error deleting user:', e);
+      }
+
+      await SecureStore.deleteItemAsync("token");
+      Alert.alert('Success', 'Account deleted successfully');
+      await signOut();
+      router.replace('/login'); // Redirect to login or appropriate screen
+    } catch (error) {
+      console.error('Error deleting account:', error);
+      Alert.alert('Error', 'Failed to delete account');
+    }
+  };
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <View style={styles.container}>
@@ -237,14 +272,14 @@ const Account: React.FC = () => {
                 Once deleted, you may not be able to retrieve your information and other data associated with your account.
               </Text>
               <View style={styles.separator} />
-              <Pressable style={[styles.button, styles.buttonClose]} onPress={toggleModal}>
+              <Pressable style={[styles.button, styles.buttonClose]} onPress={handleDeleteAccount}>
                 <Text style={styles.textStyle}>Delete</Text>
               </Pressable>
             </View>
           </View>
         </Modal>
 
-        <BackButton onPress={() => router.navigate("/homepage/")} buttonStyle={styles.backButton} />
+        <BackButton onPress={() => router.back()} buttonStyle={styles.backButton} />
 
         <ScrollView style={styles.content}>
           <View style={styles.header}>
@@ -258,7 +293,7 @@ const Account: React.FC = () => {
           </View>
 
           <View style={styles.imageContainer}>
-            
+
             {userDetails && !editMode && (
               <View style={styles.detailsContainer}>
                 <Text style={styles.detailsText}>{userDetails.first_name} {userDetails.last_name}</Text>
@@ -477,7 +512,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     width: 75,
     // height: '100%',
-    
+
 
   },
   deleteButtonInner: {

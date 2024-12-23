@@ -8,6 +8,7 @@ import RBSheet from 'react-native-raw-bottom-sheet';
 import KButton from '../common/KButton';
 import * as SecureStore from 'expo-secure-store';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useClerk } from '@clerk/clerk-expo';
 
 interface UserDetails {
     first_name: string;
@@ -21,7 +22,7 @@ export default function SideDrawer(props: DrawerContentComponentProps) {
     const router = useRouter();
     const [user, setUser] = useState<UserDetails | null>(null);
     const refRBSheet = useRef<RBSheet>(null);
-
+    const { signOut } = useClerk();
     const fetchUserDetails = async () => {
         try {
             const token = await SecureStore.getItemAsync("token");
@@ -145,14 +146,20 @@ export default function SideDrawer(props: DrawerContentComponentProps) {
                         }}>Are you sure you want to log out?</Text>
                         <KButton
                             title="Confirm"
-                            onPress={() => {
-                                refRBSheet.current && refRBSheet.current.close();
-                                // Sign out actions
-                                router.push("/login");
+                            onPress={async () => {
+                                refRBSheet.current?.close();
+                                try {
+                                    await signOut();
+                                    router.push("/login");
+                                } catch (error) {
+                                    console.error("Error signing out:", error);
+                                    // Optionally, handle the error (e.g., show a notification)
+                                }
                             }}
                             buttonStyle={{ marginTop: 20, alignSelf: 'center' }}
                             textStyle={{ fontSize: 16 }}
                         />
+
                     </View>
                 </View>
             </RBSheet>

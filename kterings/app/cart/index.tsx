@@ -128,43 +128,46 @@ export default function Cart() {
       });
 
       const data = await response.json();
-      const { url, product_stored, session_data, stripe, doordash, ephemeralKey, customer, publishableKey } = data;
-      console.log(session_data);
+      console.log("API Response:", JSON.stringify(data, null, 2));
 
-      // await SecureStore.deleteItemAsync("myData");
-      await AsyncStorage.removeItem('sessionData');
-      await AsyncStorage.removeItem('productStored');
-      await AsyncStorage.removeItem('paymentIntent');
-      await AsyncStorage.removeItem('doordash');
+      const {
+        session_data = {},
+        product_stored = {},
+        stripe: paymentIntent,
+        doordash = null,
+        ephemeralKey = null,
+        customer = null,
+        publishableKey = null,
+      } = data;
 
-      // const { url, product_stored, session_data, customer,ephemeralKey, paymentIntent, doordash } = await response.json();
-      // const { paymentIntent, ephemeralKey, customer, publishableKey, doordash } = await response.json();
-
-      if (url && url.message) {
-      } else {
-          await AsyncStorage.setItem("sessionData", JSON.stringify(session_data));
-          await AsyncStorage.setItem("productStored", JSON.stringify(product_stored));
-          await AsyncStorage.setItem("paymentIntent", JSON.stringify(stripe));
-          await AsyncStorage.setItem("doordash", JSON.stringify(doordash));
-
-          await AsyncStorage.setItem("customer", JSON.stringify(customer));
-          await AsyncStorage.setItem("ephemeralKey", JSON.stringify(ephemeralKey));
-          await AsyncStorage.setItem("publishableKey", JSON.stringify(publishableKey));
-
-          console.log(JSON.stringify(ephemeralKey, null, 2));
-        router.push('/payment');
+      if (!paymentIntent) {
+        throw new Error("Missing paymentIntent in API response.");
       }
-    } catch (error) {
-      console.error("Checkout error:", error);
-      Alert.alert("There was an error processing your checkout.");
-    } finally {
-      setIsLoading(false);
+
+      await AsyncStorage.setItem("sessionData", JSON.stringify(session_data));
+      await AsyncStorage.setItem("productStored", JSON.stringify(product_stored));
+      await AsyncStorage.setItem("paymentIntent", JSON.stringify(paymentIntent));
+      await AsyncStorage.setItem("doordash", JSON.stringify(doordash));
+      await AsyncStorage.setItem("customer", JSON.stringify(customer));
+      await AsyncStorage.setItem("ephemeralKey", JSON.stringify(ephemeralKey));
+      await AsyncStorage.setItem("publishableKey", JSON.stringify(publishableKey));
+
+      console.log("AsyncStorage updated successfully.");
+      router.push("/payment");
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.error("Checkout error:", error.message);
+        Alert.alert("Checkout Error", error.message);
+      } else {
+        console.error("Checkout error:", error);
+        Alert.alert("Checkout Error", String(error));
+      }
     }
   };
 
   return (
     <View style={styles.container}>
-      <BackButton onPress={() => router.navigate("/homepage/")} buttonStyle={styles.backButton} />
+      <BackButton onPress={() => router.navigate("/homepage")} buttonStyle={styles.backButton} />
       <Text style={styles.title}>Your Cart</Text>
 
       {cart.length > 0 ? (
@@ -234,7 +237,7 @@ export default function Cart() {
           <CartSvg />
           <Text style={styles.emptyCartText}>Hungry?</Text>
           <Text style={styles.emptyCartDescription}>Add something from one of our amazing Kterers!</Text>
-          <KButton title="Browse" onPress={() => router.navigate('/homepage/')} textStyle={styles.browseButtonText} buttonStyle={styles.browseButton} />
+          <KButton title="Browse" onPress={() => router.navigate('/homepage')} textStyle={styles.browseButtonText} buttonStyle={styles.browseButton} />
         </View>
       )}
 

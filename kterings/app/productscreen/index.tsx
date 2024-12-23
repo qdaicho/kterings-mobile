@@ -550,7 +550,7 @@ const styles = StyleSheet.create({
     height: 250,
   },
   infoContainer: {
-    flexDirection: 'row',
+    flexDirection: 'column',
     justifyContent: 'space-between',
     marginHorizontal: 30,
     marginTop: 20,

@@ -230,7 +230,7 @@ const Payment = () => {
 
     return (
         <StripeProvider publishableKey={'pk_test_51O1AQjGFtYheM9I3s9jtNKzoAqI2smtkxaGykmidKAiqrzwO7YTSKOL4JkgRqt25QUwPs7sR70iyfAKLu7PTQeoT00GAzX2IdJ'}>
-            <BackButton onPress={() => router.navigate("/cart/")} buttonStyle={styles.backButton} />
+            <BackButton onPress={() => router.navigate("/cart")} buttonStyle={styles.backButton} />
             <View style={styles.container}>
                 <FlatList
                     style={{ height: 300 }}

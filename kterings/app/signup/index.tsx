@@ -9,7 +9,7 @@ import {
 import React, { useRef, useState } from "react";
 import KButton from "@/components/common/KButton";
 import RBSheet from "react-native-raw-bottom-sheet";
-import { router } from "expo-router";
+import { Redirect, router } from "expo-router";
 import { ClerkProvider, SignedIn, SignedOut, useSignUp } from "@clerk/clerk-expo";
 import VerifyCode from "@/components/screens/VerifyCode";
 import ErrorComponent from "@/components/screens/ErrorComponent";
@@ -43,11 +43,14 @@ export default function Login() {
     }
 
     const onSignUpPress = async () => {
+        console.log("SignUp button pressed");
         if (!isLoaded) {
+            console.log("SignUp not loaded");
             return;
         }
 
         if (password !== confirmPassword) {
+            console.log("Passwords do not match");
             setCurrentError("Passwords do not match");
             refRBSheet.current && refRBSheet.current.open();
             setDrawerIndex(1);
@@ -62,14 +65,13 @@ export default function Login() {
                 emailAddress,
                 password,
             });
-
             await signUp.prepareEmailAddressVerification({
                 strategy: "email_code",
             });
-
-            setPendingVerification(true);
+            setDrawerIndex(0);
+            refRBSheet.current && refRBSheet.current.open();
         } catch (err: any) {
-            console.log(err);
+            console.log("Error during signUp process", err);
             setCurrentError(err.errors[0].message);
             refRBSheet.current && refRBSheet.current.open();
             setDrawerIndex(1);
@@ -197,9 +199,9 @@ export default function Login() {
                     <Pressable onPress={() => router.navigate("/login")}>
                         <Text style={styles.haveAccount}>I Already Have an Account</Text>
                     </Pressable>
-                    <SignInWithOAuth title="Sign In with Google" buttonStyle={{ marginBottom: 50 }} />
-                    <Pressable>
-                        <View style={[styles.becomeKtererContainer, { height: 67, width }]}>
+                    <SignInWithOAuth title="Sign In with Google" buttonStyle={{ marginBottom: 70 }} />
+                    <Pressable style={{ position: 'absolute', bottom: 0, width: '100%', height: '7%' }}>
+                        <View style={[styles.becomeKtererContainer, { height: '100%', justifyContent: 'center' }]}>
                             <Text style={styles.becomeAKterer}>Become a Kterer</Text>
                         </View>
                     </Pressable>
@@ -230,6 +232,7 @@ export default function Login() {
 
             <SignedIn>
                 <Text>Already signed in</Text>
+                <Redirect href="/homepage" />
             </SignedIn>
         </>
     );
@@ -240,6 +243,7 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: "space-around",
         alignItems: "center",
+        backgroundColor: "#FFFFFF",
     },
     backButton: {
         position: "absolute",
@@ -253,7 +257,7 @@ const styles = StyleSheet.create({
         letterSpacing: 0,
         lineHeight: 38,
         textAlign: "center",
-        marginTop: 100,
+        marginTop: 80,
     },
     joinToExploreKter: {
         color: "#969696",
@@ -264,7 +268,7 @@ const styles = StyleSheet.create({
         lineHeight: 20,
         textAlign: "center",
         marginTop: 5,
-        marginBottom: 40,
+        marginBottom: 20,
     },
     haveAccount: {
         color: "#BF1E2E",
@@ -272,14 +276,14 @@ const styles = StyleSheet.create({
         fontSize: 16,
         letterSpacing: 0,
         textAlign: "center",
-        marginBottom: 30,
+        marginBottom: 10,
     },
     inputContainer: {
         height: 47,
         width: 262,
         borderRadius: 4,
         backgroundColor: "#EBEBEB",
-        marginBottom: 30,
+        marginBottom: 10,
         justifyContent: "center",
     },
     errorContainer: {

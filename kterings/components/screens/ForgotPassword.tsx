@@ -13,7 +13,7 @@ const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onPress, setEmailAddres
     
     
     return (
-        <View style={{ flex: 1 , }}>
+        <View style={{ flex: 1 , flexDirection: 'column', justifyContent: 'space-between'}}>
             <View style={styles.container}>
                 <Text style={styles.forgotPassword}>Forgot Password?</Text>
                 <Text style={styles.pleaseEnterYourEm}>Please enter your email to receive a 4-digit verification code.</Text>
@@ -33,7 +33,7 @@ const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onPress, setEmailAddres
                 title="Continue"
                 onPress={onPress}
                 buttonStyle={{
-                    marginTop: 20,
+                    marginTop: 150,
                     alignSelf: 'center'
                 }}
                 textStyle={{

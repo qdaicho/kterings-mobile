@@ -7,23 +7,23 @@
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "myapp",
-    "userInterfaceStyle": "automatic",
+    "userInterfaceStyle": "light",
     "splash": {
       "image": "./assets/images/splash_screen.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
-    "assetBundlePatterns": [
-      "**/*"
-    ],
+    "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": true,
       "config": {
         "usesNonExemptEncryption": false
       },
-      "jsEngine": "jsc"
+      "jsEngine": "jsc",
+      "userInterfaceStyle": "light"
     },
     "android": {
+      "userInterfaceStyle": "light",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
@@ -34,8 +34,7 @@
         "android.permission.CAMERA"
       ],
       "package": "com.kterings.kterings",
-      "versionCode": 3,
-      "privacyPolicyUrl": "https://www.kterings.com/legal/privacy-policy"
+      "versionCode": 3
     },
     "web": {
       "bundler": "metro",
@@ -53,19 +52,19 @@
       [
         "expo-font",
         {
-          "fonts": [
-            "assets/fonts/TT Chocolates Trial Regular.otf"
-          ]
+          "fonts": ["assets/fonts/TT Chocolates Trial Regular.otf"]
         }
       ],
       [
         "expo-build-properties",
         {
           "android": {
-            "usesCleartextTraffic": false
+            "usesCleartextTraffic": true,
+            "privacyPolicyUrl": "https://www.kterings.com/legal/privacy-policy"
           },
           "ios": {
-            "usesCleartextTraffic": false
+            "usesCleartextTraffic": true,
+            "privacyPolicyUrl": "https://www.kterings.com/legal/privacy-policy"
           }
         }
       ],

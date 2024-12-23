@@ -1,9 +1,31 @@
-import React, { useCallback } from 'react';
-import { Pressable, Text, StyleSheet, StyleProp, ViewStyle, TextStyle, Image } from 'react-native';
-import * as WebBrowser from "expo-web-browser";
-import { useOAuth } from "@clerk/clerk-expo";
-import { useWarmUpBrowser } from "@hooks/useWarmUpBrowser";
-import { router } from 'expo-router';
+// SignInWithOAuth.tsx
+import React, { useCallback, useEffect } from 'react';
+import {
+  Pressable,
+  Text,
+  StyleSheet,
+  StyleProp,
+  ViewStyle,
+  TextStyle,
+  Image,
+} from 'react-native';
+import * as WebBrowser from 'expo-web-browser';
+import { useOAuth } from '@clerk/clerk-expo';
+import * as Linking from 'expo-linking';
+import { useRouter } from 'expo-router';
+import * as AuthSession from 'expo-auth-session';
+import * as SecureStore from "expo-secure-store";
+import { useUser } from '@clerk/clerk-expo'
+
+// Hook to warm up the browser for improved UX
+const useWarmUpBrowser = () => {
+  useEffect(() => {
+    void WebBrowser.warmUpAsync();
+    return () => {
+      void WebBrowser.coolDownAsync();
+    };
+  }, []);
+};
 
 // Ensure auth session is handled
 WebBrowser.maybeCompleteAuthSession();
@@ -14,33 +36,91 @@ interface SignInWithOAuthProps {
   textStyle?: StyleProp<TextStyle>;
 }
 
-const SignInWithOAuth: React.FC<SignInWithOAuthProps> = ({ 
-  title = 'Sign in with Google', 
-  buttonStyle, 
-  textStyle 
+const SignInWithOAuth: React.FC<SignInWithOAuthProps> = ({
+  title = 'Sign in with Google',
+  buttonStyle,
+  textStyle,
 }) => {
-  // Warm up browser for better performance
   useWarmUpBrowser();
 
-  const { startOAuthFlow } = useOAuth({ 
-    strategy: "oauth_google",
-    redirectUrl: 'https://clerk.kterings.com/v1/oauth_callback' // Add your redirect URL here
-  });
+  const { startOAuthFlow } = useOAuth({ strategy: 'oauth_google' });
+  const router = useRouter();
+
+  const save = async (key: string, value: string) => {
+    await SecureStore.setItemAsync(key, value);
+  };
 
   const handleSignIn = useCallback(async () => {
     try {
-      const { createdSessionId, setActive } = await startOAuthFlow();
+      console.log('Starting OAuth flow...');
+
+      const redirectUri = AuthSession.makeRedirectUri({
+        scheme: 'myapp',
+        path: 'redirect',
+      });
+      // console.log('Generated redirectUri:', redirectUri);
+
+      const { createdSessionId, setActive, signIn, signUp, authSessionResult } = await startOAuthFlow({
+        redirectUrl: redirectUri,
+      });
+
+      // Log the entire result for comprehensive debugging
+      console.log('OAuth flow result:', {
+        createdSessionId,
+        setActive,
+        signIn,
+        signUp,
+        authSessionResult,
+      });
 
       if (createdSessionId && setActive) {
+        console.log('Session ID created:', createdSessionId);
+        await save("sessionID", createdSessionId);
+        
+
+        // Register with the backend using OAuth data
+        const registerResponse = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/register`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            client_id: createdSessionId,
+            // Assuming these fields are available from the OAuth data
+            first_name: signUp?.firstName,
+            last_name: signUp?.lastName,
+            user_type: "user",
+            email: signUp?.emailAddress,
+          }),
+        });
+
+        // print out the fields as json pretty
+        console.log('Fields:', JSON.stringify({
+          client_id: createdSessionId,
+          first_name: signUp?.firstName,
+          last_name: signUp?.lastName,
+          user_type: "user",
+          email: signUp?.emailAddress,
+        }, null, 2));
+
+        if (!registerResponse.ok) {
+          throw new Error("Network response was not ok");
+        }
+
+        const registerData = await registerResponse.json();
+        save("token", registerData.token);
         await setActive({ session: createdSessionId });
-        router.replace("/homepage"); // Using replace instead of navigate to prevent going back
+        router.push('/homepage');
+      } else {
+        console.warn('OAuth flow did not return a session ID or setActive is missing.');
       }
     } catch (err) {
-      console.error("OAuth Error:", err);
-      // You might want to show an error message to the user
-      // Alert.alert("Sign in failed", "Please try again later");
+      console.error('OAuth Error:', err);
+      console.error('Error details (stringified):', JSON.stringify(err, null, 2));
+      // Optional: Display an alert or notification to the user
+      // ...existing code...
     }
-  }, [startOAuthFlow]);
+  }, [startOAuthFlow, router]);
+
+
 
   return (
     <Pressable
@@ -51,8 +131,8 @@ const SignInWithOAuth: React.FC<SignInWithOAuthProps> = ({
       ]}
       onPress={handleSignIn}
     >
-      <Image 
-        source={require('@assets/images/google_logo.png')} 
+      <Image
+        source={require('@assets/images/google_logo.png')}
         style={styles.logo}
         resizeMode="contain"
       />

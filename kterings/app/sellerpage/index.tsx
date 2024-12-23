@@ -121,21 +121,34 @@ const SellerPage = () => {
                             <Text style={styles.sellerTitle}>{ktererProfile?.kterer.name}</Text>
                             <Text style={styles.sellerSubTitle}>{ktererProfile?.kterer.ethnicity}</Text>
                             <Text style={styles.sellerSubTitle}>
-                                {ktererProfile?.kterer.experienceValue ? `${ktererProfile?.kterer.experienceValue} years experience` : '? years experience'}
+                                {ktererProfile?.kterer.experienceValue
+                                    ? `${ktererProfile?.kterer.experienceValue} years experience`
+                                    : '? years experience'}
                             </Text>
                         </View>
                     </View>
-                    <View style={styles.sellerActions}>
+                    <View style={[styles.sellerActions, { flexWrap: 'wrap', flex: 1 }]}>
                         <Pressable onPress={handleFavoriteToggle} style={styles.favoriteButton}>
-                            <Entypo name={isFavorite ? "heart" : "heart-outlined"} size={24} color={isFavorite ? "red" : "gray"} />
+                            <Entypo
+                                name={isFavorite ? 'heart' : 'heart-outlined'}
+                                size={24}
+                                color={isFavorite ? 'red' : 'gray'}
+                            />
                             <Text style={styles.favoriteText}>Favorite</Text>
                         </Pressable>
                         {renderSellerRating(ktererProfile?.kterer.rating || 0)}
                         <Text style={styles.memberSince}>
-                            Member since {ktererProfile?.kterer.created_at ? new Date(ktererProfile.kterer.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : 'Unknown'}
+                            Member since{' '}
+                            {ktererProfile?.kterer.created_at
+                                ? new Date(ktererProfile.kterer.created_at).toLocaleDateString('en-US', {
+                                    month: 'long',
+                                    year: 'numeric',
+                                })
+                                : 'Unknown'}
                         </Text>
                     </View>
                 </View>
+
                 <View style={styles.header}>
                     <Text style={styles.headerText}>All Items</Text>
                     <DropDownPicker
@@ -199,6 +212,7 @@ const styles = StyleSheet.create({
     sellerInfo: {
         flexDirection: 'row',
         alignItems: 'center',
+        marginRight: 30,
     },
     sellerImage: {
         width: 60,

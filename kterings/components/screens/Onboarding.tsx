@@ -8,7 +8,7 @@ import Motorcycle from "@assets/images/motorcycle.svg";
 import Food from "@assets/images/donuts_and_food.svg";
 import Logo from "@assets/images/kterings_logo.svg";
 import { SvgProps } from 'react-native-svg';
-
+import { ThemeProvider } from '../ThemeContext';
 const text = [
     {
         id: 1,
@@ -67,7 +67,7 @@ const OnboardingComponent: React.FC = () => {
                                 setCurPage(nextPage);
                                 scrollToIndex(nextPage);
                                 if (curPage === text.length - 1) {
-                                    router.navigate('/login/');
+                                    router.navigate('/login');
                                 }
                             }}
 
@@ -92,7 +92,8 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         alignItems: 'center',
-        marginBottom: 80
+        marginBottom: 80,
+        backgroundColor: 'white',
     },
 });
 

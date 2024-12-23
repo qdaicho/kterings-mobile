@@ -204,7 +204,7 @@ const AddAddress: React.FC = () => {
       setIsSearching(false);
     }}>
       <View style={styles.mainContainer}>
-        <BackButton onPress={() => router.push('/homepage/account')} buttonStyle={styles.backButton} />
+        <BackButton onPress={() => router.push('/homepage')} buttonStyle={styles.backButton} />
         <MapView
           ref={mapRef}
           style={styles.map}

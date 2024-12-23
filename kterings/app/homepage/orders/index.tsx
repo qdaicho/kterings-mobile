@@ -149,7 +149,7 @@ const Orders: React.FC = () => {
       ) : (
         <>
           <BackButton
-            onPress={() => router.navigate('/homepage/')}
+            onPress={() => router.back()}
             buttonStyle={styles.backButton}
           />
           <View style={{ flex: 1, marginHorizontal: 30, flexDirection: 'column', backgroundColor: '#FFFFFF' }}>

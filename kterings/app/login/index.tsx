@@ -13,7 +13,7 @@ import EnterCode from "@/components/screens/EnterCode";
 import ResetPassword from "@/components/screens/ResetPassword";
 import PasswordReset from "@/components/screens/PasswordReset";
 import { Redirect, router } from "expo-router";
-import { SignedIn, SignedOut, useSignIn } from "@clerk/clerk-expo";
+import { SignedIn, SignedOut, useClerk, useSignIn, useUser } from "@clerk/clerk-expo";
 import SignInWithOAuth from "@/components/common/SignInWithOAuth";
 import Logo from "@assets/images/kterings_logo.svg";
 import * as SecureStore from "expo-secure-store";
@@ -31,12 +31,15 @@ const LoginLayout = () => {
   const [code, setCode] = useState("");
   const [successfulCreation, setSuccessfulCreation] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const { signOut } = useClerk();
+  const { user } = useUser();
 
   const save = async (key: string, value: string) => {
     await SecureStore.setItemAsync(key, value);
   };
 
-  const onSignInPress = async () => {
+  // TypeScript-safe updated onSignInPress function
+  const onSignInPress = async (): Promise<void> => {
     console.log("[onSignInPress] Attempting to sign in");
 
     if (!isLoaded || !signIn || !setActive) {
@@ -49,16 +52,22 @@ const LoginLayout = () => {
     }
 
     try {
+      // Clear any existing sessions
+      console.log("[onSignInPress] Signing out existing sessions");
+      await signOut();
+
+      // Start a new sign-in process
       const completeSignIn = await signIn.create({
         identifier: emailAddress,
         password,
       });
       console.log("[onSignInPress] signIn.create completed");
 
-      if (signIn.status === "complete") {
-        console.log("[onSignInPress] Sign-in status complete, fetching registration...");
+      if (signIn.status === "complete" && completeSignIn.createdSessionId) {
+        console.log("[onSignInPress] Session is active, registering with server");
+
+        // Use the backend `register` API to complete the session
         const registerUrl = `${process.env.EXPO_PUBLIC_API_URL}/register`;
-        
         const registerResponse = await fetch(registerUrl, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -70,34 +79,37 @@ const LoginLayout = () => {
 
         if (!registerResponse.ok) {
           console.log("[onSignInPress] Registration failed with non-200 status");
-          throw new Error("Network response was not ok");
+          // print out the response in pretty json
+          console.log(await registerResponse.text());
+          throw new Error("Registration with server failed. Please try again.");
         }
 
         const registerData = await registerResponse.json();
         console.log("[onSignInPress] Registration success, saving token");
+
+        // Save token for further authenticated requests
         await save("token", registerData.token);
-
-        await setActive({ session: signIn.createdSessionId });
-
-        if (completeSignIn.status === "complete") {
-          console.log("[onSignInPress] Session active, navigating to homepage");
-          router.navigate("/homepage");
-        } else {
-          throw new Error("Failed to validate the session");
-        }
+        await save("sessionID", completeSignIn.createdSessionId);
+        // Set the active Clerk session
+        await setActive({ session: completeSignIn.createdSessionId });
+        console.log("[onSignInPress] Session active, navigating to homepage");
+        router.navigate("/homepage");
       } else {
-        console.log("[onSignInPress] Sign-in incomplete");
-        throw new Error("Sign-in is incomplete. Please try again.");
+        throw new Error("Failed to validate the session. Please try again.");
       }
     } catch (err: any) {
       console.log("[onSignInPress] Error:", err.message);
-      const error = err.errors?.[0]?.message || err.message || "An error occurred.";
+
+      const error =
+        err.errors?.[0]?.message || err.message || "An error occurred during sign-in.";
       setErrorMessage(error);
+
       refRBSheet.current?.open();
       setDrawerIndex(4);
       setDrawerHeight(200);
     }
   };
+
 
   const sendPasswordResetCode = async () => {
     console.log("[sendPasswordResetCode] Attempting to send code");
@@ -119,6 +131,10 @@ const LoginLayout = () => {
       console.log("[sendPasswordResetCode] Code sent successfully");
       setSuccessfulCreation(true);
       setErrorMessage("");
+
+      // Advance to the EnterCode screen
+      setDrawerIndex(1);
+      setDrawerHeight(300); // Adjust height as needed
     } catch (err: any) {
       console.log("[sendPasswordResetCode] Error:", err.message);
       const error = err.errors?.[0]?.longMessage || err.message || "An error occurred.";
@@ -128,6 +144,7 @@ const LoginLayout = () => {
       setDrawerHeight(200);
     }
   };
+
 
   const resetPassword = async () => {
     console.log("[resetPassword] Attempting password reset");
@@ -152,6 +169,10 @@ const LoginLayout = () => {
       if (result.status === "complete") {
         await setActive({ session: result.createdSessionId });
         console.log("[resetPassword] Password reset complete. Navigating to homepage");
+
+        // Close the RBSheet before navigating
+        refRBSheet.current?.close();
+
         router.navigate("/homepage");
       } else {
         throw new Error("Unexpected result status");
@@ -165,6 +186,7 @@ const LoginLayout = () => {
       setDrawerHeight(200);
     }
   };
+
 
   return (
     <>
@@ -253,7 +275,10 @@ const LoginLayout = () => {
               )}
               {drawerIndex === 1 && successfulCreation && (
                 <EnterCode
-                  onPress={() => setDrawerIndex(2)}
+                  onPress={() => {
+                    setDrawerIndex(2);
+                    setDrawerHeight(300); // Adjust height as needed
+                  }}
                   setCode={setCode}
                 />
               )}
@@ -290,6 +315,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "space-around",
     alignItems: "center",
+    backgroundColor: "white",
   },
   createAccount: {
     color: "#BF1E2E",

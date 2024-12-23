@@ -30,7 +30,7 @@ const EnterCode: React.FC<EnterCodeProps> = ({onPress, setCode}) => {
                 title="Continue"
                 onPress={onPress}
                 buttonStyle={{
-                    marginTop: 20,
+                    marginTop: 150,
                     alignSelf: 'center'
                 }}
                 textStyle={{

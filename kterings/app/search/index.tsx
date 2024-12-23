@@ -283,6 +283,7 @@ const styles = StyleSheet.create({
     flex: 1,
     marginHorizontal: 20,
     marginTop: 70,
+    backgroundColor: '#FFFFFF',
   },
   header: {
     flexDirection: 'row',
