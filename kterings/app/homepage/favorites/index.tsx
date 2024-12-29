@@ -102,7 +102,7 @@ export default function Favorites() {
   });
 
   const handleKtererPress = (id: number) => {
-    router.push({ pathname: '/sellerpage', params: { id: id } });
+    router.replace({ pathname: '/sellerpage', params: { id: id } });
   };
 
   const renderFavoriteKterer = ({ item }: { item: Kterer }) => (
@@ -136,7 +136,7 @@ export default function Favorites() {
   return (
     <>
       <BackButton
-        onPress={() => router.back()}
+        onPress={() => router.replace('/homepage')}
         buttonStyle={styles.backButton}
       />
       <View style={styles.container}>

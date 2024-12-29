@@ -1,3 +1,7 @@
+export interface SearchTerm {
+  search_term: string;
+}
+
 export interface OrderItem {
   name: string;
   price: number;
@@ -364,7 +368,6 @@ export interface EarningsResponse {
     pending: Array<{ amount: number }>;
   };
 }
-
 
 export interface Kterer {
   id: number;

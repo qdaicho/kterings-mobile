@@ -96,7 +96,7 @@ export default function Notifications() {
 
   return (
     <View style={styles.container}>
-      <BackButton onPress={() => router.navigate("/homepage/")} buttonStyle={styles.backButton} />
+      <BackButton onPress={() => router.navigate("/homepage")} buttonStyle={styles.backButton} />
       <Text style={{ fontSize: 18, fontFamily: 'TT Chocolates Trial Bold', color: '#000000', marginTop: 120, marginBottom: 20 }}>Notifications</Text>
 
       {notifications.length > 0 ? (

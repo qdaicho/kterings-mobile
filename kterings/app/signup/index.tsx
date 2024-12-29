@@ -10,7 +10,12 @@ import React, { useRef, useState } from "react";
 import KButton from "@/components/common/KButton";
 import RBSheet from "react-native-raw-bottom-sheet";
 import { Redirect, router } from "expo-router";
-import { ClerkProvider, SignedIn, SignedOut, useSignUp } from "@clerk/clerk-expo";
+import {
+    ClerkProvider,
+    SignedIn,
+    SignedOut,
+    useSignUp,
+} from "@clerk/clerk-expo";
 import VerifyCode from "@/components/screens/VerifyCode";
 import ErrorComponent from "@/components/screens/ErrorComponent";
 import SignInWithOAuth from "@/components/common/SignInWithOAuth";
@@ -18,6 +23,7 @@ import BackButton from "@/components/common/BackButton";
 import * as SecureStore from "expo-secure-store";
 import { useUser } from "@clerk/clerk-react";
 import { StatusBar } from "expo-status-bar";
+import PasswordInput from "@/components/common/PasswordInput";
 
 export default function Login() {
     const refRBSheet = useRef<RBSheet>(null);
@@ -31,6 +37,7 @@ export default function Login() {
     const [emailAddress, setEmailAddress] = useState("");
     const [password, setPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
+
     const [pendingVerification, setPendingVerification] = useState(false);
     const [code, setCode] = useState("");
     const [currentError, setCurrentError] = useState("");
@@ -93,17 +100,20 @@ export default function Login() {
                 await setActive({ session: completeSignUp.createdSessionId });
                 const userId = completeSignUp.createdUserId;
 
-                const registerResponse = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/register`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        client_id: userId,
-                        first_name: completeSignUp.firstName,
-                        last_name: completeSignUp.lastName,
-                        user_type: "user",
-                        email: completeSignUp.emailAddress,
-                    }),
-                });
+                const registerResponse = await fetch(
+                    `${process.env.EXPO_PUBLIC_API_URL}/register`,
+                    {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            client_id: userId,
+                            first_name: completeSignUp.firstName,
+                            last_name: completeSignUp.lastName,
+                            user_type: "user",
+                            email: completeSignUp.emailAddress,
+                        }),
+                    }
+                );
 
                 if (!registerResponse.ok) {
                     throw new Error("Network response was not ok");
@@ -122,14 +132,26 @@ export default function Login() {
         }
     };
 
-    const handlePasswordChange = (text: React.SetStateAction<string>) => {
+    const handlePasswordChange = (text: string) => {
         setPassword(text);
-        setPasswordsMatch(text === confirmPassword);
+
+        // If confirmPassword is empty, don't show an error
+        if (!confirmPassword) {
+            setPasswordsMatch(true);
+        } else {
+            setPasswordsMatch(text === confirmPassword);
+        }
     };
 
-    const handleConfirmPasswordChange = (text: React.SetStateAction<string>) => {
+    const handleConfirmPasswordChange = (text: string) => {
         setConfirmPassword(text);
-        setPasswordsMatch(text === password);
+
+        // If password is empty, don't show an error
+        if (!password) {
+            setPasswordsMatch(true);
+        } else {
+            setPasswordsMatch(text === password);
+        }
     };
 
     return (
@@ -141,51 +163,53 @@ export default function Login() {
                     <BackButton onPress={() => router.back()} buttonStyle={styles.backButton} />
                     <Text style={styles.createAnAccount}>Create an Account</Text>
                     <Text style={styles.joinToExploreKter}>Join to explore Kterings today!</Text>
-                    <View style={styles.inputContainer}>
-                        <TextInput
-                            placeholder="First Name"
-                            placeholderTextColor="#B2B2B2"
-                            style={styles.input}
-                            onChangeText={setFirstName}
-                        />
-                    </View>
-                    <View style={styles.inputContainer}>
-                        <TextInput
-                            placeholder="Last Name"
-                            placeholderTextColor="#B2B2B2"
-                            style={styles.input}
-                            onChangeText={setLastName}
-                        />
-                    </View>
-                    <View style={styles.inputContainer}>
-                        <TextInput
-                            placeholder="Email/Username"
-                            placeholderTextColor="#B2B2B2"
-                            style={styles.input}
-                            autoCorrect={false}
-                            onChangeText={setEmailAddress}
-                        />
-                    </View>
-                    <View style={[styles.inputContainer, !passwordsMatch && styles.errorContainer]}>
-                        <TextInput
-                            placeholder="Password"
-                            placeholderTextColor="#B2B2B2"
-                            style={styles.input}
-                            secureTextEntry
-                            autoCorrect={false}
-                            textContentType="password"
+
+                    {/* Grouping the form fields together for a cleaner layout */}
+                    <View style={styles.formContainer}>
+                        <View style={styles.inputContainer}>
+                            <TextInput
+                                placeholder="First Name"
+                                placeholderTextColor="#B2B2B2"
+                                style={styles.input}
+                                onChangeText={setFirstName}
+                            />
+                        </View>
+                        <View style={styles.inputContainer}>
+                            <TextInput
+                                placeholder="Last Name"
+                                placeholderTextColor="#B2B2B2"
+                                style={styles.input}
+                                onChangeText={setLastName}
+                            />
+                        </View>
+                        <View style={styles.inputContainer}>
+                            <TextInput
+                                placeholder="Email/Username"
+                                placeholderTextColor="#B2B2B2"
+                                style={styles.input}
+                                autoCorrect={false}
+                                onChangeText={setEmailAddress}
+                            />
+                        </View>
+                        {/* Password Input */}
+                        <PasswordInput
                             onChangeText={handlePasswordChange}
+                            value={password}
+                            placeholder="Enter Password"
+                            containerStyle={styles.inputContainer}
+                            inputStyle={styles.input}
                         />
-                    </View>
-                    <View style={[styles.inputContainer, !passwordsMatch && styles.errorContainer]}>
-                        <TextInput
-                            placeholder="Confirm Password"
-                            placeholderTextColor="#B2B2B2"
-                            style={styles.input}
-                            secureTextEntry
-                            autoCorrect={false}
-                            textContentType="password"
+                        {/* Confirm Password Input with error highlighting only if mismatch */}
+                        <PasswordInput
                             onChangeText={handleConfirmPasswordChange}
+                            value={confirmPassword}
+                            placeholder="Confirm Password"
+                            containerStyle={[
+                                styles.inputContainer,
+                                // Only show red border if confirmPassword is non-empty and passwords do not match
+                                !passwordsMatch && confirmPassword.length > 0 && styles.errorContainer,
+                            ]}
+                            inputStyle={styles.input}
                         />
                     </View>
 
@@ -199,13 +223,23 @@ export default function Login() {
                     <Pressable onPress={() => router.navigate("/login")}>
                         <Text style={styles.haveAccount}>I Already Have an Account</Text>
                     </Pressable>
-                    <SignInWithOAuth title="Sign In with Google" buttonStyle={{ marginBottom: 70 }} mode="signup" />
-                    <Pressable style={{ position: 'absolute', bottom: 0, width: '100%', height: '7%' }}>
-                        <View style={[styles.becomeKtererContainer, { height: '100%', justifyContent: 'center' }]}>
+
+                    <SignInWithOAuth
+                        title="Sign In with Google"
+                        buttonStyle={{ marginBottom: 70 }}
+                        mode="signup"
+                    />
+
+                    {/* “Become a Kterer” footer */}
+                    <Pressable
+                        style={{ position: "absolute", bottom: 0, width: "100%", height: "9%" }}
+                    >
+                        <View style={[styles.becomeKtererContainer, { height: "100%", justifyContent: "center" }]}>
                             <Text style={styles.becomeAKterer}>Become a Kterer</Text>
                         </View>
                     </Pressable>
 
+                    {/* Bottom Sheet for Verification / Error */}
                     <RBSheet
                         ref={refRBSheet}
                         animationType="slide"
@@ -241,9 +275,8 @@ export default function Login() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        justifyContent: "space-around",
-        alignItems: "center",
         backgroundColor: "#FFFFFF",
+        alignItems: "center",
     },
     backButton: {
         position: "absolute",
@@ -254,7 +287,6 @@ const styles = StyleSheet.create({
         color: "#000000",
         fontFamily: "TT Chocolates Trial Bold",
         fontSize: 20,
-        letterSpacing: 0,
         lineHeight: 38,
         textAlign: "center",
         marginTop: 80,
@@ -264,23 +296,20 @@ const styles = StyleSheet.create({
         fontFamily: "TT Chocolates Trial Medium",
         fontSize: 18,
         fontWeight: "500",
-        letterSpacing: 0,
         lineHeight: 20,
         textAlign: "center",
         marginTop: 5,
         marginBottom: 20,
     },
-    haveAccount: {
-        color: "#BF1E2E",
-        fontFamily: "TT Chocolates Trial Medium",
-        fontSize: 16,
-        letterSpacing: 0,
-        textAlign: "center",
-        marginBottom: 10,
+    formContainer: {
+        width: 262,
+        alignItems: "center",
+        marginBottom: 20,
+        gap: 25,
     },
     inputContainer: {
         height: 47,
-        width: 262,
+        width: "100%",
         borderRadius: 4,
         backgroundColor: "#EBEBEB",
         marginBottom: 10,
@@ -294,11 +323,16 @@ const styles = StyleSheet.create({
         color: "#000000",
         fontFamily: "TT Chocolates Trial Medium",
         fontSize: 15,
-        letterSpacing: 0,
         textAlign: "center",
     },
+    haveAccount: {
+        color: "#BF1E2E",
+        fontFamily: "TT Chocolates Trial Medium",
+        fontSize: 16,
+        textAlign: "center",
+        marginBottom: 10,
+    },
     becomeKtererContainer: {
-        justifyContent: "center",
         backgroundColor: "#BF1E2E",
     },
     becomeAKterer: {
@@ -306,7 +340,6 @@ const styles = StyleSheet.create({
         fontFamily: "TT Chocolates Trial Bold",
         fontSize: 20,
         fontWeight: "800",
-        letterSpacing: 0,
         lineHeight: 38,
         textAlign: "center",
     },

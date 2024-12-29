@@ -10,12 +10,33 @@ import {
   Image,
 } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
-import { useOAuth } from '@clerk/clerk-expo';
+import { useClerk, useOAuth } from '@clerk/clerk-expo';
 import * as Linking from 'expo-linking';
 import { useRouter } from 'expo-router';
 import * as AuthSession from 'expo-auth-session';
 import * as SecureStore from "expo-secure-store";
 import { useUser } from '@clerk/clerk-expo';
+
+interface OAuthFlowResult {
+  createdSessionId: string;
+  setActive: (options: { session: string }) => Promise<void>;
+  signIn?: {
+    status?: string;
+    emailAddress?: string;
+    firstName?: string;
+    lastName?: string;
+  };
+  signUp?: {
+    status?: string;
+    emailAddress?: string;
+    firstName?: string;
+    lastName?: string;
+  };
+  authSessionResult: {
+    type: string;
+    error?: string;
+  };
+}
 
 // Hook to warm up the browser for improved UX
 const useWarmUpBrowser = () => {
@@ -46,6 +67,8 @@ const SignInWithOAuth: React.FC<SignInWithOAuthProps> = ({
   useWarmUpBrowser();
 
   const { startOAuthFlow } = useOAuth({ strategy: 'oauth_google' });
+  const { signOut } = useClerk();
+
   const router = useRouter();
   const user = useUser();
 
@@ -55,99 +78,88 @@ const SignInWithOAuth: React.FC<SignInWithOAuthProps> = ({
 
   const handleSignIn = useCallback(async () => {
     try {
-      console.log(`Starting OAuth flow in ${mode} mode...`);
-
+      console.log('Starting OAuth flow and signing out.');
+      await signOut();
+  
       const redirectUri = AuthSession.makeRedirectUri({
         scheme: 'myapp',
         path: 'redirect',
       });
-      // console.log('Generated redirectUri:', redirectUri);
-
-      const { createdSessionId, setActive, signIn, signUp, authSessionResult } = await startOAuthFlow({
-        redirectUrl: redirectUri,
-      });
-
-      // Log the entire result for comprehensive debugging
-      console.log('OAuth flow result:', {
+  
+      const { createdSessionId, setActive, signIn, signUp, authSessionResult } =
+        (await startOAuthFlow({ redirectUrl: redirectUri })) as OAuthFlowResult;
+  
+      console.log('OAuth flow result:', JSON.stringify({
         createdSessionId,
         setActive,
         signIn,
         signUp,
         authSessionResult,
-      });
-
-      if (createdSessionId && setActive) {
-        console.log('Session ID created:', createdSessionId);
-        await save("sessionID", createdSessionId);
-
-        if (mode === 'signup') {
-          // Register with the backend using OAuth data
-          const registerResponse = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/register`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              client_id: createdSessionId,
-              // Assuming these fields are available from the OAuth data
-              first_name: signUp?.firstName,
-              last_name: signUp?.lastName,
-              user_type: "user",
-              email: signUp?.emailAddress,
-            }),
-          });
-
-          // Print out the fields as pretty JSON
-          console.log('Registration Fields:', JSON.stringify({
-            client_id: createdSessionId,
-            first_name: signUp?.firstName,
-            last_name: signUp?.lastName,
-            user_type: "user",
-            email: signUp?.emailAddress,
-          }, null, 2));
-
-          if (!registerResponse.ok) {
-            const errorData = await registerResponse.text();
-            throw new Error(`Registration failed: ${errorData}`);
-          }
-
-          const registerData = await registerResponse.json();
-          await save("token", registerData.token);
-          await setActive({ session: createdSessionId });
-          router.push('/homepage');
-        } else if (mode === 'signin') {
-          await setActive({ session: createdSessionId });
-          // Log in with the backend using OAuth data
-          const loginResponse = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/register`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              client_id: createdSessionId,
-              // Assuming these fields are available from the OAuth data
-              email: signUp?.emailAddress,
-            }),
-          });
-
-          if (!loginResponse.ok) {
-            const errorData = await loginResponse.text();
-            throw new Error(`Login failed: ${errorData}`);
-          }
-
-          const loginData = await loginResponse.json();
-          await save("token", loginData.token);
-          
-          router.push('/homepage');
-        } else {
-          console.warn(`Unknown mode: ${mode}. No action taken.`);
-        }
-      } else {
-        console.warn('OAuth flow did not return a session ID or setActive is missing.');
+      }, null, 2));
+  
+      if (!createdSessionId || !setActive) {
+        throw new Error('OAuth flow did not return a valid session ID or setActive function.');
       }
+  
+      await save('sessionID', createdSessionId);
+  
+      if (signUp?.status === 'complete') {
+        // Handle Sign-Up Flow
+        console.log('Detected Sign-Up flow');
+        const registerResponse = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/register`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            client_id: createdSessionId,
+            first_name: signUp.firstName,
+            last_name: signUp.lastName,
+            user_type: 'user',
+            email: signUp.emailAddress,
+          }),
+        });
+  
+        if (!registerResponse.ok) {
+          const errorData = await registerResponse.text();
+          throw new Error(`Registration failed: ${errorData}`);
+        }
+  
+        const registerData = await registerResponse.json();
+        await save('token', registerData.token);
+        await setActive({ session: createdSessionId });
+        router.replace('/homepage');
+  
+      } else if (signIn?.status === 'complete') {
+        // Handle Sign-In Flow
+        console.log('Detected Sign-In flow');
+        const loginResponse = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            client_id: createdSessionId,
+            email: signIn.emailAddress,
+          }),
+        });
+  
+        if (!loginResponse.ok) {
+          const errorData = await loginResponse.text();
+          throw new Error(`Login failed: ${errorData}`);
+        }
+  
+        const loginData = await loginResponse.json();
+        await save('token', loginData.token);
+        console.log('Token:', loginData.token);
+        await setActive({ session: createdSessionId });
+        router.replace('/homepage');
+  
+      } else {
+        console.warn('No valid signIn or signUp status returned from OAuth flow.');
+      }
+  
     } catch (err) {
-      // console.error(`OAuth Error during ${mode}:`, err);
-      // console.error('Error details (stringified):', JSON.stringify(err, null, 2));
-      // Optional: Display an alert or notification to the user
-      // ...existing code...
+      console.error('OAuth Error:', err);
+      alert('An error occurred during authentication. Please try again.');
     }
-  }, [startOAuthFlow, router, mode]);
+  }, [startOAuthFlow, router]);
 
   return (
     <Pressable

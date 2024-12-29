@@ -1,6 +1,7 @@
-import React, { useState } from 'react'
-import { View, Text, StyleSheet, TextInput } from 'react-native'
+import React, { useState } from 'react';
+import { View, Text, StyleSheet } from 'react-native';
 import KButton from '../common/KButton';
+import PasswordInput from '../common/PasswordInput';
 
 interface ResetPasswordProps {
     onPress: () => void;
@@ -17,118 +18,108 @@ const ResetPassword: React.FC<ResetPasswordProps> = ({ onPress, setPassword, pas
         setPasswordsMatch(text === confirmPassword);
     };
 
-    const handleConfirmPasswordChange = (text: React.SetStateAction<string>) => {
+    const handleConfirmPasswordChange = (text: string) => {
         setConfirmPassword(text);
         setPasswordsMatch(text === password);
     };
-    return (
-        <View style={{ flex: 1 }}>
-            <View style={styles.container}>
-                <Text style={styles.title}>Reset Password</Text>
-                <Text style={styles.subtitle}>Please enter a new password.</Text>
-                <Text style={styles.newPasswordLabel}>New Password</Text>
-                <View style={[styles.inputContainer, !passwordsMatch && styles.errorContainer]}>
-                    <TextInput
-                        placeholder='New Password'
-                        placeholderTextColor='#B2B2B2' // Set placeholder text color
-                        secureTextEntry={true}
-                        autoCorrect={false}
-                        textContentType='password'
-                        style={styles.input}
-                        onChangeText={(password) => handlePasswordChange(password)}
-                    />
-                </View>
-                <Text style={styles.newPasswordLabel}>Confirm New Password</Text>
-                <View style={[styles.inputContainer, !passwordsMatch && styles.errorContainer]}>
-                    <TextInput
-                        placeholder='New Password'
-                        placeholderTextColor='#B2B2B2' // Set placeholder text color
-                        secureTextEntry={true}
-                        autoCorrect={false}
-                        textContentType='password'
-                        style={styles.input}
-                        onChangeText={(password) => handleConfirmPasswordChange(password)}
-                    />
-                    {/* <EyeIconOrImage style={{
-                        position: 'absolute',
-                        right: 20,
-                    }} /> */}
-                </View>
 
-            </View>
+    return (
+        <View style={styles.container}>
+            <Text style={styles.title}>Reset Password</Text>
+            <Text style={styles.subtitle}>Please enter a new password.</Text>
+
+            <PasswordInput
+                onChangeText={handlePasswordChange}
+                value={password}
+                placeholder="New Password"
+                containerStyle={[
+                    styles.inputContainer,
+                    !passwordsMatch && styles.errorContainer,
+                ]}
+                inputStyle={styles.input}
+            />
+
+            <PasswordInput
+                onChangeText={handleConfirmPasswordChange}
+                value={confirmPassword}
+                placeholder="Confirm New Password"
+                containerStyle={[
+                    styles.inputContainer,
+                    !passwordsMatch && styles.errorContainer,
+                ]}
+                inputStyle={styles.input}
+            />
+
+            {!passwordsMatch && (
+                <Text style={styles.errorText}>Passwords do not match</Text>
+            )}
+
             <KButton
                 title="Reset Password"
                 onPress={onPress}
-                buttonStyle={{
-                    marginTop: 20,
-                    alignSelf: 'center'
-                }}
-                textStyle={{
-                    fontSize: 16,
-                }}
+                buttonStyle={styles.button}
+                textStyle={styles.buttonText}
             />
         </View>
-
-    )
-}
-
+    );
+};
 
 const styles = StyleSheet.create({
     container: {
-        marginLeft: 40,
-        marginRight: 40,
+        flex: 1,
+        justifyContent: 'space-evenly', // Evenly distributes items vertically
+        paddingHorizontal: 20,
+        backgroundColor: '#ffffff',
+
     },
     title: {
         color: '#000000',
         fontFamily: 'TT Chocolates Trial Bold',
-        fontSize: 16,
-        fontWeight: '600',
-        letterSpacing: 0,
-        lineHeight: 29,
-        textAlign: 'left',
+        fontSize: 18,
+        fontWeight: '700',
+        textAlign: 'center',
+        marginBottom: 10,
     },
     subtitle: {
-        color: '#000000',
+        color: '#6F6F6F',
         fontFamily: 'TT Chocolates Trial Medium',
-        fontSize: 13,
-        fontWeight: '500',
-        letterSpacing: 0,
-        lineHeight: 21,
+        fontSize: 14,
+        textAlign: 'center',
     },
     inputContainer: {
-        marginTop: 15,
         height: 47,
-        width: 321,
         borderRadius: 4,
         backgroundColor: '#EBEBEB',
-        justifyContent: 'center'
+        justifyContent: 'center',
+        paddingHorizontal: 10,
+        marginVertical: 10, // Adds space between input fields
+        alignSelf: 'center',
     },
     errorContainer: {
-        height: 47,
-        width: 262,
-        borderRadius: 4,
-        backgroundColor: '#EBEBEB',
-        marginBottom: 30,
-        justifyContent: 'center',
-        borderWidth: 1,
         borderColor: 'red',
+        borderWidth: 1,
     },
     input: {
         color: '#000000',
         fontFamily: 'TT Chocolates Trial Medium',
-        fontSize: 13,
-        fontWeight: '500',
-        letterSpacing: 0,
-        textAlign: 'left',
-        marginLeft: 15
+        fontSize: 14,
     },
-    newPasswordLabel: {
-        color: '#000000',
+    errorText: {
+        color: 'red',
+        fontSize: 12,
+        fontFamily: 'TT Chocolates Trial Medium',
+        textAlign: 'center',
+    },
+    button: {
+        alignSelf: 'center',
+        backgroundColor: '#BF1E2E',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    buttonText: {
+        color: '#FFFFFF',
         fontFamily: 'TT Chocolates Trial Bold',
-        fontSize: 13,
-        fontWeight: '600',
-        letterSpacing: 0,
-        marginTop: 20
+        fontSize: 16,
     },
 });
 

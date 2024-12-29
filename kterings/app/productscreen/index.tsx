@@ -459,7 +459,7 @@ const ProductScreen = () => {
                   <Pressable
                     onPress={() => {
                       console.log('ktererProfile?.kterer.id', ktererProfile?.kterer.id);
-                      router.push({ pathname: '/sellerpage/', params: { id: ktererProfile?.kterer.id.toString() } });
+                      router.replace({ pathname: '/sellerpage', params: { id: ktererProfile?.kterer.id.toString() } });
                     }}>
                     <Text style={styles.seeMore}>See More Items</Text>
                   </Pressable>

@@ -153,7 +153,7 @@ export default function Cart() {
       await AsyncStorage.setItem("publishableKey", JSON.stringify(publishableKey));
 
       console.log("AsyncStorage updated successfully.");
-      router.push("/payment");
+      router.replace("/payment");
     } catch (error: unknown) {
       if (error instanceof Error) {
         console.error("Checkout error:", error.message);

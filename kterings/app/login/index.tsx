@@ -18,6 +18,7 @@ import SignInWithOAuth from "@/components/common/SignInWithOAuth";
 import Logo from "@assets/images/kterings_logo.svg";
 import * as SecureStore from "expo-secure-store";
 import { StatusBar } from "expo-status-bar";
+import PasswordInput from "@/components/common/PasswordInput";
 
 const LoginLayout = () => {
   const refRBSheet = useRef<RBSheet>(null);
@@ -33,6 +34,7 @@ const LoginLayout = () => {
   const [errorMessage, setErrorMessage] = useState("");
   const { signOut } = useClerk();
   const { user } = useUser();
+  const [isLoading, setIsLoading] = useState(false); // Add this line
 
   const save = async (key: string, value: string) => {
     await SecureStore.setItemAsync(key, value);
@@ -41,6 +43,7 @@ const LoginLayout = () => {
   // TypeScript-safe updated onSignInPress function
   const onSignInPress = async (): Promise<void> => {
     console.log("[onSignInPress] Attempting to sign in");
+    setIsLoading(true);
 
     if (!isLoaded || !signIn || !setActive) {
       console.log("[onSignInPress] Sign-in is not ready");
@@ -107,6 +110,8 @@ const LoginLayout = () => {
       refRBSheet.current?.open();
       setDrawerIndex(4);
       setDrawerHeight(200);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -187,6 +192,12 @@ const LoginLayout = () => {
     }
   };
 
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+
+  const togglePasswordVisibility = () => {
+    setIsPasswordVisible(!isPasswordVisible);
+  };
+
 
   return (
     <>
@@ -206,16 +217,11 @@ const LoginLayout = () => {
               autoCapitalize="none"
             />
           </View>
-          <View style={styles.inputContainer}>
-            <TextInput
-              placeholder="Password"
-              placeholderTextColor="#B2B2B2"
-              style={styles.input}
-              secureTextEntry
-              onChangeText={setPassword}
-              value={password}
-            />
-          </View>
+          <PasswordInput
+            onChangeText={setPassword}
+            value={password}
+            placeholder="Enter Password"
+          />
           <Pressable
             onPress={() => {
               refRBSheet.current?.open();
@@ -227,11 +233,14 @@ const LoginLayout = () => {
             <Text style={styles.forgotPassword}>Forgot Password?</Text>
           </Pressable>
           <KButton
-            title="Login"
+            title={isLoading ? "Logging in..." : "Login"} // Optionally change the title
             onPress={onSignInPress}
-            buttonStyle={{ marginBottom: 20 }}
+            buttonStyle={[
+              isLoading && styles.loginButtonDisabled, // Disabled style when loading
+            ]}
             textStyle={{ fontSize: 20 }}
           />
+
           <SignInWithOAuth
             title="Sign in with Google"
             buttonStyle={{ marginBottom: 50 }}
@@ -343,6 +352,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#EBEBEB",
     marginBottom: 30,
     justifyContent: "center",
+    flexDirection: "row",
   },
   input: {
     color: "#000000",
@@ -356,5 +366,8 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: "#BF1E2E",
     fontFamily: "TT Chocolates Trial Bold",
+  },
+  loginButtonDisabled: {
+    backgroundColor: "darkgrey", // Change to dark grey when disabled
   },
 });

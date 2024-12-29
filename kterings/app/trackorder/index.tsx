@@ -51,7 +51,7 @@ export default function index() {
     return (
         <>
             <BackButton
-                onPress={() => router.push({ pathname: "/homepage/", params: { orders: "true" } })}
+                onPress={() => router.replace({ pathname: "/homepage", params: { orders: "true" } })}
                 buttonStyle={styles.backButton}
             />
             <View style={{ flex: 1, marginHorizontal: 30, flexDirection: 'column', marginTop: 60, marginBottom: 60 }}>

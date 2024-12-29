@@ -150,7 +150,7 @@ export default function SideDrawer(props: DrawerContentComponentProps) {
                                 refRBSheet.current?.close();
                                 try {
                                     await signOut();
-                                    router.push("/login");
+                                    router.replace("/login");
                                 } catch (error) {
                                     console.error("Error signing out:", error);
                                     // Optionally, handle the error (e.g., show a notification)

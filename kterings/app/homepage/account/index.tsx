@@ -279,7 +279,7 @@ const Account: React.FC = () => {
           </View>
         </Modal>
 
-        <BackButton onPress={() => router.back()} buttonStyle={styles.backButton} />
+        <BackButton onPress={() => router.replace('/homepage')} buttonStyle={styles.backButton} />
 
         <ScrollView style={styles.content}>
           <View style={styles.header}>
@@ -328,7 +328,7 @@ const Account: React.FC = () => {
                   <View key={`address-${addresses.home.id}`} style={{ marginTop: 10 }}>
                     <Swipeable
                       key={`swipeable-address-${addresses.home.id}`}
-                      renderRightActions={(progress, dragX) => renderRightActions(progress, dragX, () => router.push('/addaddress'))}
+                      renderRightActions={(progress, dragX) => renderRightActions(progress, dragX, () => router.replace('/addaddress'))}
                     >
                       <Pressable onPress={() => handleSelectAddress(addresses.home)}>
                         <View style={styles.addressContainer}>
@@ -345,7 +345,7 @@ const Account: React.FC = () => {
                   <View key={`address-${addresses.work.id}`} style={{ marginTop: 10 }}>
                     <Swipeable
                       key={`swipeable-address-${addresses.work.id}`}
-                      renderRightActions={(progress, dragX) => renderRightActions(progress, dragX, () => router.push('/addaddress'))}
+                      renderRightActions={(progress, dragX) => renderRightActions(progress, dragX, () => router.replace('/addaddress'))}
                     >
                       <Pressable onPress={() => handleSelectAddress(addresses.work)}>
                         <View style={styles.addressContainer}>
@@ -362,7 +362,7 @@ const Account: React.FC = () => {
             ) : (
               <Text style={styles.noAddressesText}>No saved addresses found.</Text>
             )}
-            <KAddButton onPress={() => router.push('/addaddress')} title='Add New Address' />
+            <KAddButton onPress={() => router.replace('/addaddress')} title='Add New Address' />
           </Section>
 
           {/* <Section title="Payment Details">

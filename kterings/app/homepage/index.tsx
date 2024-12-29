@@ -23,7 +23,7 @@ import RBSheet from 'react-native-raw-bottom-sheet';
 import KButton from '@/components/common/KButton';
 import OnboardingComponent from '@/components/screens/Onboarding';
 import * as SecureStore from 'expo-secure-store';
-import { Food, Quantity, qImage } from '@/hooks/types';
+import { Food, Quantity, qImage, Address, AddressResponse } from '@/hooks/types';
 
 
 
@@ -108,48 +108,62 @@ export default function App() {
         return closestCluster;
     };
 
+    const fetchAndSetAddress = async () => {
+        try {
+            const token = await SecureStore.getItemAsync("token");
+            if (!token) throw new Error("Token not found");
+
+            const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/address`, {
+                method: "GET",
+                headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+            });
+
+            if (!response.ok) throw new Error(response.statusText);
+
+            const data: AddressResponse = await response.json();
+            console.log("Addresses:", data);
+
+            // Use the first available address (home or work)
+            const defaultAddress = data.home || data.work;
+            if (defaultAddress) {
+                setSelectedAddress(defaultAddress.address);
+                await SecureStore.setItemAsync("selectedAddress", JSON.stringify(defaultAddress));
+            } else {
+                console.warn("No addresses available in the response");
+            }
+        } catch (error) {
+            console.error("Error fetching addresses:", error);
+        }
+    };
 
     useEffect(() => {
-        const fetchData = async () => {
-            // if (refRBSheet.current) {
-            //     refRBSheet.current.open();
-            //     const timeout = setTimeout(() => {
-            //         setContentChanged(true);
-            //     }, 5000); // Change content after 5 seconds
-            //     return () => clearTimeout(timeout);
-            // }
+        fetchAndSetAddress();
+    }, []);
 
-            // Asynchronous request to get all the food from the database upon load
+    useEffect(() => {
+        const fetchProducts = async () => {
             try {
-                const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/food`, {
-                    method: 'GET',
-                });
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                const products = await response.json();
-                // Handle the fetched products here
-                // console.log(products.data);
-                setProd(products.data);
+                const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/food`, { method: "GET" });
+                if (!response.ok) throw new Error("Network response was not ok");
 
-                const filteredProducts = products.data.filter((product: { rating: number; ethnic_type: string; }) =>
-                    product.rating >= (value || 4.0) && (selectedCategory ? product.ethnic_type === selectedCategory : true)
+                const products = await response.json();
+                setAllItemsProd(products.data);
+
+                const filteredProducts = products.data.filter((product: any) =>
+                    product.rating >= value && (!selectedCategory || product.ethnic_type === selectedCategory)
                 );
-                setAllItemsProd(filteredProducts);
-                setClosestProd(getClosestProducts(filteredProducts));
-                setSelectedAddress(await getStoredAddress());
+                setClosestProd(filteredProducts);
             } catch (error) {
-                console.error('Error fetching data:', error);
+                console.error("Error fetching products:", error);
             }
         };
 
-        fetchData();
-    }, [value, selectedCategory]); // Empty dependency array to run the effect only once on mount
-
+        fetchProducts();
+    }, [value, selectedCategory]);
 
     return (
         <View style={styles.container}>
-            
+
 
             <SignedIn>
                 <RBSheet
@@ -217,7 +231,7 @@ export default function App() {
                                         onPress={() => {
                                             refRBSheet.current && refRBSheet.current.close();
                                             // signOut();
-                                            router.push("/trackorder");
+                                            router.replace("/trackorder");
                                         }}
                                         buttonStyle={{
                                             marginTop: 20,
@@ -266,7 +280,7 @@ export default function App() {
                                 secureTextEntry={false}
                                 autoCorrect={false}
                                 // textContentType="password"
-                                onFocus={() => router.push('/search')}
+                                onFocus={() => router.replace('/search')}
                             />
                         </View>
                     </View>
